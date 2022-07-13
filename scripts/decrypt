@@ -1,0 +1,15 @@
+#!@bash@/bin/bash
+# code: language=bash tabSize=4
+# This file contains code from https://github.com/ryantm/agenix/blob/master/pkgs/agenix.nix and https://github.com/nzbr/nixos/blob/main/scripts.nix
+
+FILE="${1%.age}"
+KEY=${KEY:-~/.ssh/id_ed25519}
+
+if [ -e "$FILE" ]; then
+  echo output file exists, aborting
+  exit 1
+fi
+
+set -euxo pipefail
+@rage@/bin/rage -i "${KEY}" -o "$FILE" -d "$1"
+rm "$1"

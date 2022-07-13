@@ -1,0 +1,32 @@
+#!@python3@/bin/python
+# code: language=python tabSize=4
+
+import json
+import urllib.request
+
+def fetchKeys(user: str, url: str) -> []:
+    keys = [
+        x.strip() for x in
+        urllib.request \
+            .urlopen(url) \
+            .read() \
+            .decode("UTF-8") \
+            .split("\n")
+        if x.strip() != ""
+    ]
+    print(f"{user}:\t{len(keys)}")
+    return keys
+
+filename = "authorizedKeys.json"
+
+data = {}
+with open(filename, "r") as f:
+    data = json.loads(f.read())
+
+data["keys"] = {
+    user: fetchKeys(user, url) for (user,url) in data["users"].items()
+}
+
+with open(filename, "w") as f:
+    f.write(json.dumps(data, indent = 2))
+    f.flush()
