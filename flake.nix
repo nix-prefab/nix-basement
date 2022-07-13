@@ -89,6 +89,13 @@
             ];
           };
 
+        checks = {
+          nixpkgs-fmt = pkgs.runCommand "check-nix-format" { } ''
+            ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${./.}
+            mkdir $out #sucess
+          '';
+        };
+
       }
     ));
 }
