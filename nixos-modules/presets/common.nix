@@ -22,7 +22,6 @@ with builtins; with lib; {
     console.keyMap = "us";
     time.timeZone = mkDefault "Europe/Berlin";
 
-
     networking = {
       useDHCP = false; # Is deprecated and has to be set to false
       firewall = {
@@ -61,14 +60,17 @@ with builtins; with lib; {
     };
 
     nix = {
-      extraOptions = ''
-        experimental-features = nix-command flakes
-      '';
+      settings = {
+        auto-optimise-store = true;
+      };
       gc = {
         automatic = mkDefault false;
         dates = "weekly";
         options = "--delete-older-than 30d";
       };
+      extraOptions = ''
+        experimental-features = nix-command flakes
+      '';
     };
 
     system.configurationRevision = lib.mkIf (inputs.self ? rev) inputs.self.rev;
