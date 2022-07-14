@@ -27,9 +27,9 @@
       # system independent outputs
       inherit lib;
 
-      isos = [ (import ./isos/nixosiso.nix { inherit inputs; }) ];
+      isos = (findModules "${self}/isos" self);
 
-      darwinModules = findDarwinModules self;
+      darwinModules = attrValues (findDarwinModules self);
 
       overlays = {
         default = final: prev: {
@@ -96,6 +96,13 @@
               (attrValues self.apps.${system})
             ];
           };
+
+        checks = {
+          nixpkgs-fmt = pkgs.runCommand "check-nix-format" { } ''
+            ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${./.}
+            mkdir $out #sucess
+          '';
+        };
 
       }
     ));

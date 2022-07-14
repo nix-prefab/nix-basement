@@ -1,6 +1,10 @@
 { config, lib, pkgs, inputs, ... }:
 let
   cfg = config.virtualization.linuxvm;
+  linuxpkgs = import inputs.nixpkgs {
+    system = "aarch64-linux";
+    config.allowUnfree = true;
+  };
 in
 {
   options.virtualization.linuxvm.enable = lib.mkEnableOption "Enables a Linux VM";
@@ -11,6 +15,7 @@ in
         supportedFeatures = [ "kvm" "big-parallel" ];
         maxJobs = 8;
         hostName = "builder";
+      }
         ];
         environment.etc."ssh/config".text = ''
           Host builder
@@ -29,7 +34,7 @@ in
               -boot menu=on \
               -netdev user,id=mynet0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::5555-:22 \
               -nic user,model=virtio \
-              -drive file="${self.packages.aarch64-darwin.nixosiso}/iso/*",media=cdrom,if=none,id=drivers \
+              -drive file="${inputs.base.isos.nixosOnMacVM}/iso/*",media=cdrom,if=none,id=drivers \
               -device usb-storage,drive=drivers \
               -nographic -nodefaults \
               -drive file=${linuxpkgs.OVMF.fd}/FV/AAVMF_CODE.fd,format=raw,if=pflash,readonly=on &

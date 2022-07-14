@@ -3,12 +3,12 @@ with builtins; with lib; {
 
   findNixosModules = flake:
     if (readDir "${flake}") ? "nixos-modules" then
-      findModules "${flake}/nixos-modules"
+      findModules "${flake}/nixos-modules" flake
     else
-      findModules "${flake}/modules";
+      findModules "${flake}/modules" flake;
 
   findDarwinModules = flake:
-    findModules "${flake}/darwin-modules";
+    findModules "${flake}/darwin-modules" flake;
 
 
   findModules = modulesPath: flake:

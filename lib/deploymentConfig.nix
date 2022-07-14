@@ -14,7 +14,7 @@ with builtins; with lib; {
         })
         (
           filterAttrs
-            (name: metaConfig: metaConfig ? deployment) # Are the deployment setting specified
+            (name: metaConfig: metaConfig ? deployment) # Are the deployment settings specified
             flake.nixosConfigurations
         );
   };
