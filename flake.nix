@@ -27,7 +27,7 @@
       # system independent outputs
       inherit lib;
 
-      isos = (findModules "${self}/isos" self);
+      isos = mapAttrs (n: v: import "${self}/isos/${(last v)}" { inherit inputs; }) (zipAttrs (map (x: { "${removeSuffix ".nix" x}" = x; }) (attrNames (filterAttrs (n: v: v == "regular") (readDir "${self}/isos")))));
 
       darwinModules = attrValues (findDarwinModules self);
 
