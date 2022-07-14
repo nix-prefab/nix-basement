@@ -27,7 +27,7 @@
       # system independent outputs
       inherit lib;
 
-      isos = (findModules "${self}/isos" self);
+      isos = mapAttrs (n: v: v { inherit inputs; }) (findModules "${self}/isos" self);
 
       darwinModules = attrValues (findDarwinModules self);
 
