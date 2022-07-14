@@ -22,7 +22,6 @@
   outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
     let
       lib = import ./lib { inherit inputs; };
-      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
     in
     with builtins; with lib; {
       # system independent outputs

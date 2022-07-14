@@ -2,10 +2,10 @@
 with builtins; with lib; {
 
   generateBuildJobs = flake: system:
-    linkFarmFromDrvs "build-jobs" (flattenAttrs [
+    flattenAttrs [
 
       #nixosConfigurations
-      (
+      (if flake ? nixosConfigurations then
         mapAttrs'
           (name: metaConfig:
             nameValuePair'
@@ -16,20 +16,22 @@ with builtins; with lib; {
             (name: metaConfig: metaConfig.system == system)
             flake.nixosConfigurations
           )
-      )
+      else { })
 
       # packages
-      (mapAttrs
-        (n: v: nameValuePair' "pkg-${n}-${system}" v)
-        flake.packages.${system}
-      )
+      (if flake ? packages then
+        mapAttrs'
+          (n: v: nameValuePair' "pkg-${n}" v)
+          flake.packages.${system}
+      else { })
 
       # devShells
-      (mapAttrs
-        (n: v: nameValuePair' "shell-${n}-${system}" v)
-        flake.devShells.${system}
-      )
+      (if flake ? devShells then
+        mapAttrs'
+          (n: v: nameValuePair' "shell-${n}" v)
+          flake.devShells.${system}
+      else { })
 
-    ]);
+    ];
 
 }
