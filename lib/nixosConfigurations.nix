@@ -1,4 +1,4 @@
-{ lib, inputs, ... }:
+{ lib, ... }:
 with builtins; with lib; {
 
   generateNixosConfigurations = flake:
@@ -6,15 +6,14 @@ with builtins; with lib; {
       (name: _:
         let
           metaConfig = import "${flake}/hosts/${name}" { inherit (flake) inputs lib; };
-          combinedInputs = inputs // flake.inputs // { self = flake; };
-          pkgs = flake.legacyPackages.${metaConfig.system};
         in
         metaConfig // (nixosSystem {
           inherit (metaConfig) system;
+          pkgs = flake.legacyPackages.${metaConfig.system};
           specialArgs = {
+            inherit inputs;
             lib = flake.lib;
             system = metaConfig.system;
-            inputs = combinedInputs;
           };
           modules = flatten [
 
@@ -37,7 +36,7 @@ with builtins; with lib; {
       networking.hostName = config.system.name;
     };
 
-  inputModules = inputs':
+  inputModules = inputs:
     (filter
       (module: (typeOf module) == "lambda")
       (flatten
@@ -58,7 +57,7 @@ with builtins; with lib; {
               then input.nixosModule
               else [ ]
           )
-          inputs'
+          inputs
         )
       )
     );
