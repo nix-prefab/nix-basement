@@ -43,9 +43,7 @@
         };
       };
 
-      buildJobs = generateBuildJobs self supportedSystems;
-
-    } // (flake-utils.lib.eachSystem supportedSystems (system:
+    } // (flake-utils.lib.eachDefaultSystem (system:
       let
         # import nixpkgs for the current system and set options
         pkgs = import "${inputs.nixpkgs}" {
@@ -108,6 +106,8 @@
             mkdir $out #sucess
           '';
         };
+
+        buildJobs = generateBuildJobs self system;
 
       }
     ));
