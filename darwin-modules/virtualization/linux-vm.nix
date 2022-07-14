@@ -25,6 +25,13 @@ in
         The path of the log file for the linuxvm service.
       '';
     };
+    sharePath = mkOption {
+      type = types.path;
+      default = "/Users/user/vmshare";
+      description = ''
+        Path to share to the VM
+      '';
+    };
 
   };
   config = lib.mkIf cfg.enable {
@@ -74,6 +81,8 @@ in
           fi
           echo "[-] Starting Subprocess to manage SSH Keys"
           sshprocess &
+          echo "[-] Creating (maybe) host share folder"
+          ${lib.optionalString (cfg.sharePath != "") "mkdir -p ${cfg.sharePath}"}
           echo "[-] Starting QEMU"
           ${pkgs.qemu}/bin/qemu-system-aarch64 \
             -accel hvf \
@@ -81,6 +90,7 @@ in
             -smp 6 -m 4096 \
             -M virt \
             -device qemu-xhci \
+            ${lib.optionalString (cfg.sharePath != "") "-virtfs local,security_model=mapped,mount_tag=hostshare,path=${cfg.sharePath}"} \
             -hda "$QCOWPATH" \
             -boot d \
             -netdev user,id=mynet0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::5555-:22 \
