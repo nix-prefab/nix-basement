@@ -3,13 +3,13 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    darwin = {
+      url = "github:lnl7/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     flake-utils.url = "github:numtide/flake-utils";
     agenix = {
       url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    darwin = {
-      url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     deploy-rs = {
@@ -22,12 +22,15 @@
   outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
     let
       lib = import ./lib { inherit inputs; };
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
     in
     with builtins; with lib; {
       # system independent outputs
       inherit lib;
 
-      isos = mapAttrs (n: v: import "${self}/isos/${(last v)}" { inherit inputs; }) (zipAttrs (map (x: { "${removeSuffix ".nix" x}" = x; }) (attrNames (filterAttrs (n: v: v == "regular") (readDir "${self}/isos")))));
+      nixosModules = findNixosModules self;
+
+      isos = mapAttrs (n: v: v { inherit inputs self; }) (findModules "${self}/isos" self);
 
       darwinModules = attrValues (findDarwinModules self);
 
@@ -103,6 +106,8 @@
             mkdir $out #sucess
           '';
         };
+
+        buildJobs = generateBuildJobs self system;
 
       }
     ));

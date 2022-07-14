@@ -45,10 +45,16 @@ with builtins; with lib; {
     in
     flattenAttrs (
       flatten [
-        (generateAgeConfig (allHostKeys ++ maintainerKeys) "${flake}/secrets")
+        (
+          if pathExists "${flake}/secrets"
+          then generateAgeConfig (allHostKeys ++ maintainerKeys) "${flake}/secrets"
+          else [ ]
+        )
         (mapAttrsToList
           (name: hostKey:
-            generateAgeConfig (flatten [ hostKey maintainerKeys ]) ("${flake}/hosts/${name}/secrets")
+            if pathExists "${flake}/hosts/${name}/secrets"
+            then generateAgeConfig (flatten [ hostKey maintainerKeys ]) ("${flake}/hosts/${name}/secrets")
+            else [ ]
           )
           hostKeys
         )
