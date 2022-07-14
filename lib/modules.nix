@@ -2,9 +2,15 @@
 with builtins; with lib; {
 
   findNixosModules = flake:
-    let
-      modulesPath = "${flake}/modules";
-    in
+    if (readDir "${flake}") ? "nixos-modules" then
+      findModules flake "${flake}/nixos-modules"
+    else
+      findModules flake "${flake}/modules";
+
+  findDarwinModules = flake:
+    findModules flake "${flake}/darwin-modules";
+
+  findModules = flake: modulesPath:
     mapListToAttrs
       (file:
         nameValuePair'

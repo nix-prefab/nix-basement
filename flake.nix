@@ -27,6 +27,8 @@
       # system independent outputs
       inherit lib;
 
+      nixosModules = findNixosModules self;
+
       overlays = {
         default = final: prev: {
           inherit lib; # overwrite pkgs.lib with our extended lib
