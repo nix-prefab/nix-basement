@@ -8,6 +8,10 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    darwin = {
+      url = "github:lnl7/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -22,6 +26,10 @@
     with builtins; with lib; {
       # system independent outputs
       inherit lib;
+
+      isos = [ (import ./isos/nixosiso.nix { inherit inputs; }) ];
+
+      darwinModules = findDarwinModules self;
 
       overlays = {
         default = final: prev: {
