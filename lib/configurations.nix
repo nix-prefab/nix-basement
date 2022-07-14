@@ -1,17 +1,18 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  generateNixosConfigurations = flake:
+  generateNixosConfigurations = inputs:
     mapAttrs
       (name: _:
         let
+          flake = inputs.self;
           metaConfig = import "${flake}/hosts/${name}" { inherit (flake) inputs lib; };
         in
         metaConfig // (nixosSystem {
           inherit (metaConfig) system;
           pkgs = flake.legacyPackages.${metaConfig.system};
           specialArgs = {
-            inherit inputs;
+            inherit inputs flake;
             lib = flake.lib;
             system = metaConfig.system;
           };
@@ -21,14 +22,14 @@ with builtins; with lib; {
             (mkHostNameModule name)
 
             # Add the modules from all inputs
-            (inputModules combinedInputs)
+            (inputModules inputs)
 
             # the system configuration
             metaConfig.modules
           ];
         })
       )
-      (readDir "${flake}/hosts");
+      (readDir "${inputs.self}/hosts");
 
   mkHostNameModule = name:
     { config, ... }: {

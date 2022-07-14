@@ -2,7 +2,7 @@
 with builtins; with lib; {
 
   findNixosModules = flake:
-    if (readDir "${flake}") ? "nixos-modules" then
+    if pathExists "${flake}/nixos-modules" then
       findModules flake "${flake}/nixos-modules"
     else
       findModules flake "${flake}/modules";
