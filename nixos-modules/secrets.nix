@@ -4,11 +4,12 @@ let
   sharedDir = "${flake}/secrets";
   hostDir = "${flake}/hosts/${config.system.name}/secrets";
 
-  commonAssets = if pathExists sharedDir then find "" "${sharedDir}" else [ ];
-  hostAssets = if pathExists hostDir then find "" "${hostDir}" else [ ];
+  commonAssets = findAssets sharedDir;
+  hostAssets = findAssets hostDir;
   allAssets = commonAssets ++ hostAssets;
 
-  findAsset = name: (if elem name hostAssets then "${host}" else "${assets}") + "/${name}";
+  findAssets = path: if pathExists path then map (file: removePrefix "${path}/" file) (find "" path) else [ ];
+  findAssetSource = name: (if elem name hostAssets then "${hostDir}" else "${sharedDir}") + "/${name}";
 in
 {
   options = with types; {
@@ -19,7 +20,6 @@ in
     };
     secrets = mkOption {
       # type = attrsOf str;
-      type = anything;
     };
   };
 
@@ -27,12 +27,15 @@ in
 
     secrets = mapListToAttrs
       (file:
-        nameValuePair'
-          files
+        let
+          file' = removeSuffix ".age" (unsafeDiscardStringContext file);
+        in
+        nameValuePair
+          file'
           (
             if config.basement.enableAgenix && hasSuffix ".age" file
-            then config.age.secrets.${file}.path
-            else findAsset file
+            then config.age.secrets.${file'}.path
+            else findAssetSource file'
           )
       )
       allAssets;
@@ -43,7 +46,7 @@ in
         (file:
           nameValuePair'
             (removeSuffix ".age" file)
-            { file = findAsset file; }
+            { file = findAssetSource file; }
         )
         (
           filter
