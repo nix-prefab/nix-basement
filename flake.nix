@@ -42,6 +42,8 @@
         };
       };
 
+      buildJobs = generateBuildJobs self [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+
     } // (flake-utils.lib.eachDefaultSystem (system:
       let
         # import nixpkgs for the current system and set options
