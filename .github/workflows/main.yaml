@@ -1,0 +1,51 @@
+name: Run flake checks
+
+on:
+  - push
+  - pull_request
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install nix ❄️
+        uses: cachix/install-nix-action@v16
+
+      - name: Run checks ✅
+        run: nix flake check
+
+  build:
+    strategy:
+      matrix:
+       os:
+         - ubuntu-latest
+         - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install nix ❄️
+        uses: cachix/install-nix-action@v16
+
+      - name: Build 🛠️
+        id: build
+        run: |
+          export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
+          echo "::set-output name=system::$SYSTEM"
+          nix build ".#buildJobs.${SYSTEM}.combined" -vL
+          echo "::set-output name=result::$(readlink result)"
+
+      - name: Upload result
+        uses: actions/upload-artifact@v3
+        with:
+          name: result-${{ steps.build.outputs.system }}
+          path: ${{ steps.build.outputs.result }}
+
