@@ -22,6 +22,7 @@
   outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
     let
       lib = import ./lib { inherit inputs; };
+      supportedSystems = [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
     in
     with builtins; with lib; {
       # system independent outputs
@@ -42,9 +43,9 @@
         };
       };
 
-      buildJobs = generateBuildJobs self [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ];
+      buildJobs = generateBuildJobs self supportedSystems;
 
-    } // (flake-utils.lib.eachDefaultSystem (system:
+    } // (flake-utils.lib.eachSystem supportedSystems (system:
       let
         # import nixpkgs for the current system and set options
         pkgs = import "${inputs.nixpkgs}" {

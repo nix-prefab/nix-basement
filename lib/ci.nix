@@ -2,18 +2,27 @@
 with builtins; with lib; {
 
   generateBuildJobs = flake: targetSystems:
-    linkFarmFromDrvs "build-jobs" (flatten [
+    linkFarmFromDrvs "build-jobs" (flattenAttrs [
       (
-        mapAttrsToList
-          (name: metaConfig: metaConfig.config.system.build.toplevel)
+        mapAttrs'
+          (name: metaConfig:
+            nameValuePair'
+              "nixos-system-${name}"
+              metaConfig.config.system.build.toplevel
+          )
           (filterAttrs
             (name: metaConfig: elem metaConfig.system targetSystems)
             flake.nixosConfigurations
           )
       )
-      (flatten
+      (flattenAttrs
         (map
-          (system: (attrValues flake.packages.${system}))
+          (system:
+            (mapAttrs
+              (n: v: nameValuePair' "${n}-${system}" v)
+              flake.packages.${system}
+            )
+          )
           targetSystems
         )
       )
