@@ -29,6 +29,10 @@
 
       nixosModules = findNixosModules self;
 
+      isos = mapAttrs (n: v: v { inherit inputs; }) (findModules "${self}/isos" self);
+
+      darwinModules = attrValues (findDarwinModules self);
+
       overlays = {
         default = final: prev: {
           inherit lib; # overwrite pkgs.lib with our extended lib

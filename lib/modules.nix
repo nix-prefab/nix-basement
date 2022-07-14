@@ -14,7 +14,9 @@ with builtins; with lib; {
     mapListToAttrs
       (file:
         nameValuePair'
-          (removePrefix "${modulesPath}/" file)
+          (
+            let prefix = (removePrefix "${modulesPath}/" file); in if (hasSuffix ".nix" prefix) then (removeSuffix ".nix" prefix) else prefix
+          )
           (import file)
       )
       (find ".nix" modulesPath);
