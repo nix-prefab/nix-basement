@@ -92,7 +92,7 @@ with builtins; with lib; {
                     tagList = [ "nix" ];
                     runUntagged = false;
                     executor = "docker";
-                    dockerImage = "alpine:latest";
+                    dockerImage = "archlinux:latest";
                     dockerPrivileged = true;
                     dockerDisableCache = true; # Nix builds are cached through the nix daemon
                     preBuildScript = pkgs.writeScript "nix-setup" ''
