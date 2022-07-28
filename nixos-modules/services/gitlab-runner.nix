@@ -60,6 +60,10 @@ with builtins; with lib; {
 
       systemd.services.gitlab-runner.restartIfChanged = true;
 
+      systemd.tmpfiles.rules = [
+        "d /run/gitlab-runner 0755 root root 1d -"
+      ];
+
       services.gitlab-runner = {
         enable = true;
         concurrent = cfg.concurrentJobs;
