@@ -31,11 +31,14 @@ with builtins; with lib; {
     (
       let cfg = config.basement.netboot; in mkIf cfg.enable {
         boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
+        boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
+        boot.supportedFilesystems = [ "nfs" "nfs4" ];
         fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" ]; };
         fileSystems."/nix/.ro-store" = {
           neededForBoot = true;
-          device = "${cfg.nfsServer}:nixstore";
+          device = "${cfg.nfsServer}:/nixstore";
           fsType = "nfs4";
+          options = [ "ro" ];
         };
         fileSystems."/nix/.rw-store" =
           {
@@ -61,7 +64,6 @@ with builtins; with lib; {
           };
         boot.initrd.network.enable = true;
         networking.useDHCP = mkForce true;
-        boot.supportedFilesystems = [ "nfs" "nfs4" ];
       }
     )
     (
@@ -93,18 +95,22 @@ with builtins; with lib; {
             embedScript = pkgs.writeText "ipxe-embed.ipxe" ''
               #!ipxe
               :start
-              echo -- Welcome to the nix-basement netboot Service --
               echo
-              echo You'll first feel a little IP
-              echo And then the boot will commence
+              echo Welcome to the nix-basement netboot Service
+              echo
+              echo Your booting will now be implemented.
+              echo
+              echo You'll experience a sensation of IP and then booting.
+              echo Remain calm while your operating system is extracted.
+              echo
               dhcp || goto dhcp_fail
               echo IP address: ''${net0/ip} ; echo Subnet mask: ''${net0/netmask}
               chain http://''${net0/next-server}/ipxe/''${net0/mac}.ipxe || chain http://''${net0/next-server}/ipxe/default.ipxe || echo Boot Failed, retry; goto retry_dhcp
               sleep 5
               goto start
               :dhcp_fail
-              echo dhcp failed
-              echo dropping you into a ipxe shell
+              echo Your DHCP failed.
+              echo Your state of not booting will continue.
               shell
             '';
             additionalTargets = {
@@ -117,10 +123,9 @@ with builtins; with lib; {
         services.nfs.server = {
           enable = true;
           exports = ''
-            /export 192.168.3.0/24(ro,fsid=0,no_subtree_check)
-            /export/nixstore 192.168.3.0/24(ro,nohide,no_subtree_check)
+            /export *(ro,fsid=0,no_subtree_check)
+            /export/nixstore *(ro,nohide,insecure,no_subtree_check)
           '';
-
         };
         services.nginx = {
           enable = true;

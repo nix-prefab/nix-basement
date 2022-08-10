@@ -22,6 +22,6 @@ for key in j:
       p = params.read().rstrip()
       o.write(f'''#!ipxe
       set confpath http://${{net0/next-server}}/configurations/{key}
-      kernel ${{confpath}}/kernel initrd=initrd init={val}/init nix-basement.nfs-ip=${{net0/next-server}} {p}
+      kernel ${{confpath}}/kernel initrd=initrd init={val}/init nix-basement.nfs-ip=${{net0/next-server}} boot.debug1mounts {p}
       initrd ${{confpath}}/initrd
       boot''')
