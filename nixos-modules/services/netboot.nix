@@ -77,9 +77,7 @@ with builtins; with lib; {
         uefiConfigsMap = foldr (a: b: a // b) { } uefiConfigsArr;
         uefiConfigs = toJSON uefiConfigsMap;
         netbootDir = pkgs.runCommand "basement-netboot" { } ''
-          mkdir $out
           ${pkgs.python3}/bin/python ${./netboot/generateSyslinuxConfigs.py} '${uefiConfigs}'
-          cp -r ${pkgs.syslinux}/share/syslinux/* $out
         '';
 
 
@@ -89,9 +87,33 @@ with builtins; with lib; {
           device = "/nix/store";
           options = [ "bind" ];
         };
-        services.dnsmasq.extraConfig = ''
-          tftp-root=${netbootDir}
-        '';
+        services.atftpd = {
+          enable = true;
+          root = "${pkgs.ipxe.override {
+            embedScript = pkgs.writeText "ipxe-embed.ipxe" ''
+              #!ipxe
+              :start
+              echo -- Welcome to the nix-basement netboot Service --
+              echo
+              echo You'll first feel a little IP
+              echo And then the boot will commence
+              dhcp || goto dhcp_fail
+              echo IP address: ''${net0/ip} ; echo Subnet mask: ''${net0/netmask}
+              chain http://''${net0/next-server}/ipxe/''${net0/mac}.ipxe || chain http://''${net0/next-server}/ipxe/default.ipxe || echo Boot Failed, retry; goto retry_dhcp
+              sleep 5
+              goto start
+              :dhcp_fail
+              echo dhcp failed
+              echo dropping you into a ipxe shell
+              shell
+            '';
+            additionalTargets = {
+             # "bin-arm64-efi/ipxe.efi" = "ipxe-aarch64.efi";
+              "bin-x86_64-efi/snponly.efi" = null;
+              "bin/undionly.kpxe" = null;
+            };
+          }}";
+        };
         services.nfs.server = {
           enable = true;
           exports = ''
