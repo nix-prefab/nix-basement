@@ -7,10 +7,6 @@ with builtins; with lib; {
       description = ''uuid (or mac address) of the pxe booting interface'';
       type = str;
     };
-    nfsServer = mkOption {
-      description = ''the IP/FQDN the NFS Server runs on'';
-      type = str;
-    };
     isRpi = mkOption {
       description = "is this a raspberry pi?";
       type = bool;
@@ -33,13 +29,16 @@ with builtins; with lib; {
         boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
         boot.supportedFilesystems = [ "nfs" "nfs4" ];
-        fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" ]; };
-        fileSystems."/nix/.ro-store" = {
-          neededForBoot = true;
-          device = "${cfg.nfsServer}:/nixstore";
-          fsType = "nfs4";
-          options = [ "ro" ];
-        };
+        boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
+        boot.initrd.postDeviceCommands = ''
+          echo "[nix-basement] already mounting '/' and '/nix' as fileSystems can't be generated dynamically"
+          mkdir -p $targetRoot # creating /
+          mount -t tmpfs -o size=2G tmpfs $targetRoot
+          mkdir -m 0700 -p $targetRoot/nix/.ro-store # creating /nix
+          mount -t nfs4 -o ro $(xargs -n1 -a /proc/cmdline | grep "nix-basement.nfs-ip" | sed 's/.*nix-basement.nfs-ip=//' ):/nixstore $targetRoot/nix/.ro-store
+          echo "[nix-basement] mounted '/' and '/nix'"
+        '';
+        fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount" ]; };
         fileSystems."/nix/.rw-store" =
           {
             fsType = "tmpfs";
