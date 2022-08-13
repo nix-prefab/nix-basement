@@ -7,11 +7,15 @@ path = f"{out}"
 
 
 j = json.loads(sys.argv[1])
+ipxe = sys.argv[2]
 
 ipxePath = f"{path}/ipxe"
 os.mkdir(ipxePath)
 confPath = f"{path}/configurations"
 os.mkdir(confPath)
+
+for fl in os.listdir(ipxe):
+  os.symlink(f"{ipxe}/{fl}", f"{out}/{fl}")
 
 for key in j:
   val = j[key]
@@ -21,6 +25,6 @@ for key in j:
       p = params.read().rstrip()
       o.write(f'''#!ipxe
       set confpath http://${{net0/next-server}}/configurations/{key}
-      kernel ${{confpath}}/kernel initrd=initrd init={val}/init nix-basement.nfs-ip=${{net0/next-server}} boot.shell_on_fail {p}
+      kernel ${{confpath}}/kernel initrd=initrd init={val}/init boot.shell_on_fail {p}
       initrd ${{confpath}}/initrd
       boot''')

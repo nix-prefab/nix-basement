@@ -9,7 +9,6 @@ path = f"{out}"
 j = json.loads(sys.argv[1])
 
 confPath = f"{path}/configurations"
-print(j)
 
 for key in j:
   val = j[key]
@@ -20,8 +19,9 @@ for key in j:
   os.symlink(f"{toplevel}", f"{confPath}/{key}")
   for fl in os.listdir(fw):
     os.symlink(f"{fw}/{fl}", f"{keypath}/{fl}")
+  os.unlink(f"{keypath}/kernel.img")
   os.symlink(f"{toplevel}/initrd", f"{keypath}/initrd")
-  os.symlink(f"{toplevel}/vmlinuz", f"{keypath}/kernel.img")
+  os.symlink(f"{toplevel}/kernel", f"{keypath}/kernel.img")
   with open(f'{keypath}/config.txt','w') as o:
     o.write(
 f'''avoid_warnings=1

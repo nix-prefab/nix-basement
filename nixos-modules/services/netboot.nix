@@ -30,14 +30,27 @@ with builtins; with lib; {
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
         boot.supportedFilesystems = [ "nfs" "nfs4" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
-        boot.initrd.postDeviceCommands = ''
-          echo "[nix-basement] already mounting '/' and '/nix' as fileSystems can't be generated dynamically"
-          mkdir -p $targetRoot # creating /
-          mount -t tmpfs -o size=2G tmpfs $targetRoot
-          mkdir -m 0700 -p $targetRoot/nix/.ro-store # creating /nix
-          mount -t nfs4 -o ro $(xargs -n1 -a /proc/cmdline | grep "nix-basement.nfs-ip" | sed 's/.*nix-basement.nfs-ip=//' ):/nixstore $targetRoot/nix/.ro-store
-          echo "[nix-basement] mounted '/' and '/nix'"
-        '';
+        boot.initrd.postDeviceCommands = let
+            script = pkgs.writeScript "mount-dhcp" ''
+              #!/bin/sh
+              if [ ! -f /etc/basement-mounted ]; then
+                if [ -n "''$tftp" ]; then
+                  touch /etc/basement-mounted
+                  mount -t nfs4 -o ro $tftp:/nixstore /mnt-root/nix/.ro-store
+                fi
+              fi
+            '';
+          in
+          ''
+            echo "[nix-basement] already mounting '/' and '/nix' as fileSystems can't be generated dynamically"
+            mkdir -p $targetRoot # creating /
+            mount -t tmpfs -o size=2G tmpfs $targetRoot
+            mkdir -m 0700 -p $targetRoot/nix/.ro-store # creating /nix
+            for iface in $(ls /sys/class/net | grep -v ^lo$); do
+              udhcpc --quit --now -i $iface -O tftp --script ${script}
+            done
+            echo "[nix-basement] mounted '/' and '/nix'"
+          '';
         fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount" ]; };
         fileSystems."/nix/.rw-store" =
           {
@@ -80,9 +93,39 @@ with builtins; with lib; {
         rpiConfigsArr = map (x: { "${x.config.basement.netboot.uuid}" = { toplevel = x.config.system.build.toplevel; fw = "${pkgs.raspberrypifw}/share/raspberrypi/boot"; }; }) (rpis);
         rpiConfigsMap = foldr (a: b: a // b) { } rpiConfigsArr;
         rpiConfigs = toJSON rpiConfigsMap;
+
+        ipxe = pkgs.ipxe.override {
+          embedScript = pkgs.writeText "ipxe-embed.ipxe" ''
+            #!ipxe
+            :start
+            echo
+            echo Welcome to the nix-basement netboot Service
+            echo
+            echo Your booting will now be implemented.
+            echo
+            echo You'll experience a sensation of IP and then booting.
+            echo Remain calm while your operating system is extracted.
+            echo
+            dhcp || goto dhcp_fail
+            echo IP address: ''${net0/ip} ; echo Subnet mask: ''${net0/netmask}
+            chain http://''${net0/next-server}/ipxe/''${net0/mac}.ipxe || chain http://''${net0/next-server}/ipxe/default.ipxe || echo Boot Failed, retry; goto retry_dhcp
+            sleep 5
+            goto start
+            :dhcp_fail
+            echo Your DHCP failed.
+            echo Your state of not booting will continue.
+            shell
+          '';
+          additionalTargets = {
+            # "bin-arm64-efi/ipxe.efi" = "ipxe-aarch64.efi";
+            "bin-x86_64-efi/snponly.efi" = null;
+            "bin/undionly.kpxe" = null;
+          };
+        };
+
         netbootDir = pkgs.runCommand "basement-netboot" { } ''
           mkdir $out
-          ${pkgs.python3}/bin/python ${./netboot/generateIpxeConfigs.py} '${uefiConfigs}'
+          ${pkgs.python3}/bin/python ${./netboot/generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
           ${pkgs.python3}/bin/python ${./netboot/generateRpiConfigs.py} '${rpiConfigs}'
         '';
 
@@ -95,34 +138,7 @@ with builtins; with lib; {
         };
         services.atftpd = {
           enable = true;
-          root = "${pkgs.ipxe.override {
-            embedScript = pkgs.writeText "ipxe-embed.ipxe" ''
-              #!ipxe
-              :start
-              echo
-              echo Welcome to the nix-basement netboot Service
-              echo
-              echo Your booting will now be implemented.
-              echo
-              echo You'll experience a sensation of IP and then booting.
-              echo Remain calm while your operating system is extracted.
-              echo
-              dhcp || goto dhcp_fail
-              echo IP address: ''${net0/ip} ; echo Subnet mask: ''${net0/netmask}
-              chain http://''${net0/next-server}/ipxe/''${net0/mac}.ipxe || chain http://''${net0/next-server}/ipxe/default.ipxe || echo Boot Failed, retry; goto retry_dhcp
-              sleep 5
-              goto start
-              :dhcp_fail
-              echo Your DHCP failed.
-              echo Your state of not booting will continue.
-              shell
-            '';
-            additionalTargets = {
-             # "bin-arm64-efi/ipxe.efi" = "ipxe-aarch64.efi";
-              "bin-x86_64-efi/snponly.efi" = null;
-              "bin/undionly.kpxe" = null;
-            };
-          }}";
+          root = netbootDir;
         };
         services.nfs.server = {
           enable = true;
