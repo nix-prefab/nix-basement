@@ -71,14 +71,19 @@ with builtins; with lib; {
 
 
         nbConfigs = cfg.configurations;
-        uefis = nbConfigs;
+        uefis = filter (conf: !conf.config.basement.netboot.isRpi) nbConfigs;
         rpis = filter (conf: conf.config.basement.netboot.isRpi) nbConfigs;
 
         uefiConfigsArr = map (x: { "${x.config.basement.netboot.uuid}" = x.config.system.build.toplevel; }) (uefis);
         uefiConfigsMap = foldr (a: b: a // b) { } uefiConfigsArr;
         uefiConfigs = toJSON uefiConfigsMap;
+        rpiConfigsArr = map (x: { "${x.config.basement.netboot.uuid}" = { toplevel = x.config.system.build.toplevel; fw = "${pkgs.raspberrypifw}/share/raspberrypi/boot"; }; }) (rpis);
+        rpiConfigsMap = foldr (a: b: a // b) { } rpiConfigsArr;
+        rpiConfigs = toJSON rpiConfigsMap;
         netbootDir = pkgs.runCommand "basement-netboot" { } ''
-          ${pkgs.python3}/bin/python ${./netboot/generateSyslinuxConfigs.py} '${uefiConfigs}'
+          mkdir $out
+          ${pkgs.python3}/bin/python ${./netboot/generateIpxeConfigs.py} '${uefiConfigs}'
+          ${pkgs.python3}/bin/python ${./netboot/generateRpiConfigs.py} '${rpiConfigs}'
         '';
 
 

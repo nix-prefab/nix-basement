@@ -8,7 +8,6 @@ path = f"{out}"
 
 j = json.loads(sys.argv[1])
 
-os.mkdir(out)
 ipxePath = f"{path}/ipxe"
 os.mkdir(ipxePath)
 confPath = f"{path}/configurations"
