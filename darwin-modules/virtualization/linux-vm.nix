@@ -1,13 +1,63 @@
 { config, lib, pkgs, inputs, ... }:
+with lib;
 let
-  cfg = config.virtualization.linuxvm;
-  linuxpkgs = import inputs.nixpkgs {
-    system = "aarch64-linux";
-    config.allowUnfree = true;
-  };
+  cfg = config.basement.virtualization.linuxvm;
+  isoImage = config.basement.virtualization.linuxvm.configuration.system.build.isoImage;
 in
 {
-  options.virtualization.linuxvm.enable = lib.mkEnableOption "Enables a Linux VM";
+  options.basement.virtualization.linuxvm = mkOption {
+    description = ''
+      Starts a VM inside a launchctl service.
+    '';
+    default = { };
+    type = types.submodule {
+      enable = mkEnableOption "Enables a Linux VM";
+      configuration = mkOption {
+        type = types.raw;
+        description = ''nixosConfiguration (of system aarch64) that has <literal>nix-basement.presets.darwin-iso.enable = true</literal>'';
+      };
+      dataDir = mkOption {
+        default = "/var/lib/linuxvm";
+        description = ''
+          Where the linux vm's nix store resides
+        '';
+        type = types.str;
+      };
+      cores = mkOption {
+        type = types.uint;
+        default = 6;
+        description = "cores of the vm";
+      };
+      ram = mkOption {
+        type = types.uint;
+        default = 4096;
+        description = "ram of the vm (in MB)";
+      };
+      portForwards = mkOption {
+        description = "syntax: <literal>tcp/udp:hostip:hostport-guestip:guestport</literal> hostip/guestip can be omitted.";
+        type = types.listOf types.str;
+        default = [ "tcp::5555-:22" ];
+      };
+
+      logFile = mkOption {
+        type = types.path;
+        default = "/var/log/linuxvm.log";
+        description = ''
+          The path of the log file for the linuxvm service.
+        '';
+      };
+      sharePath = mkOption {
+        type = types.path;
+        default = "/Users/user/vmshare";
+        description = ''
+          Path to share to the VM
+
+          if the path contains a folder named <literal>ssh</literal>, contents are copied to /etc/ssh on the VM
+        '';
+      };
+
+    };
+  };
   config = lib.mkIf cfg.enable {
     nix.buildMachines = [
       {
@@ -17,36 +67,46 @@ in
         hostName = "builder";
       }
     ];
-    environment.etc."ssh/config".text = ''
-      Host builder
-         HostName 127.0.0.1
-         User root
-         Port 5555
+    system.activationScripts.nix-basement-linuxvm.text = ''
+      mkdir -p '${cfg.dataDir}'
+      touch '${cfg.logFile}'
     '';
-    launchd.user.agents.linuxvm = {
-      command =
-        let
-          # hydraBuildProducts contains `file iso <absolute path to iso>`
-          iso = builtins.elemAt (lib.splitString " " (builtins.readFile "${inputs.base.isos.nixOSOnMacVM}/nix-support/hydra-build-products")) 2;
-        in
+    launchd.daemons.linuxvm = {
+      serviceConfig = {
+        KeepAlive = true;
+        WorkingDirectory = cfg.dataDir;
+        StandardErrorPath = cfg.logFile;
+        StandardOutPath = cfg.logFile;
+      };
+      script =
         ''
+          echo "[-] define sshprocess function"
+          export QCOWPATH="${cfg.dataDir}/nix-store.qcow2"
+          echo "[-] Creating Nix Store QCOW2"
+          if [[ ! -f "$QCOWPATH" ]]; then
+              mkdir -p "${cfg.dataDir}"
+              ${pkgs.qemu}/bin/qemu-img create -f qcow2 "$QCOWPATH" 50G
+          fi
+          echo "[-] Creating (maybe) host share folder"
+          ${lib.optionalString (cfg.sharePath != "") "mkdir -p ${cfg.sharePath}"}
+          echo "[-] Starting QEMU"
           ${pkgs.qemu}/bin/qemu-system-aarch64 \
             -accel hvf \
             -cpu host \
-            -smp 6 -m 4096 \
-            -M virt,highmem=off \
+            -smp ${toString cfg.cores} -m ${toString cfg.ram} \
+            -M virt \
             -device qemu-xhci \
-            -boot menu=on \
-            -netdev user,id=mynet0,net=192.168.76.0/24,dhcpstart=192.168.76.9,hostfwd=tcp::5555-:22 \
-            -nic user,model=virtio \
-            -drive file="${iso}",media=cdrom,if=none,id=drivers \
+            ${lib.optionalString (cfg.sharePath != "") "-virtfs local,security_model=mapped,mount_tag=hostshare,path=${cfg.sharePath}"} \
+            -hda "$QCOWPATH" \
+            -boot d \
+            -netdev user,id=mynet0,net=192.168.76.0/24,dhcpstart=192.168.76.9,${concatStringsSep "," (map (x: "hostfwd=${x}") portForwards)} \
+            -device virtio-net-pci,netdev=mynet0 \
+            -drive file="${isoImage}/iso/$(ls ${isoImage}/iso)",media=cdrom,if=none,id=drivers \
             -device usb-storage,drive=drivers \
-            -nographic -nodefaults \
-            -drive file=${linuxpkgs.OVMF.fd}/FV/AAVMF_CODE.fd,format=raw,if=pflash,readonly=on &
-          sleep 30
-          ssh-keyscan -p 5555 localhost > /Users/user/.ssh/known_hosts
+            -nographic -serial stdio -nodefaults \
+            -drive file=${linuxpkgs.OVMF.fd}/FV/AAVMF_CODE.fd,format=raw,if=pflash,readonly=on
+          echo "[-] QEMU Exited"
         '';
-      serviceConfig.KeepAlive = true;
     };
 
   };

@@ -28,9 +28,6 @@
       inherit lib;
 
       nixosModules = findNixosModules self;
-
-      isos = mapAttrs (n: v: v { inherit inputs; }) (findModules "${self}/isos" self);
-
       darwinModules = attrValues (findDarwinModules self);
 
       overlays = {
