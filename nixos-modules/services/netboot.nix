@@ -1,23 +1,40 @@
 { config, lib, pkgs, system, ... }:
 with builtins; with lib; {
 
-  options.basement.netboot = with types; {
-    enable = mkEnableOption "Enables nix-basement netboot specific settings";
-    uuid = mkOption {
-      description = ''uuid (or mac address) of the pxe booting interface'';
-      type = str;
+  options.basement.netboot = with types;
+    mkOption {
+      description = ''
+        Configuration of a nix-basement netboot client.
+      '';
+      example = {
+        enable = true;
+        uid = "d2:ed:80:67:e1:5f";
+      };
+      default = { };
+      type = submodule {
+        enable = mkEnableOption "Enables nix-basement netboot client configuration";
+        uid = mkOption {
+          description = ''
+            On a UEFI/BIOS system, the MAC Address of the PXEing interface.
+            On a Raspberry Pi, it's Serial.
+
+            To get a RPi's Serial run <literal>cat /proc/cpuinfo | grep Serial | tail -c 9</literal> on it.
+          '';
+          type = str;
+          example = "d2:ed:80:67:e1:5f";
+        };
+        isRpi = mkOption {
+          description = "is this a raspberry pi?";
+          type = bool;
+          default = false;
+        };
+      };
     };
-    isRpi = mkOption {
-      description = "is this a raspberry pi?";
-      type = bool;
-      default = false;
-    };
-  };
   options.basement.services.netboot-host = with types; {
-    enable = mkEnableOption "Enables the nix-basement netboot generator";
+    enable = mkEnableOption "Enables the nix-basement netboot server";
     configurations = mkOption {
       description = ''All the nixosConfigurations that should be bootable
-        all configurations have to have a `networking.hostName` and a `basement.netboot.uuid`
+        all configurations have to have a `networking.hostName` and a `basement.netboot.uid`
       '';
       type = listOf raw;
     };
@@ -25,12 +42,14 @@ with builtins; with lib; {
 
   config = mkMerge [
     (
-      let cfg = config.basement.netboot; in mkIf cfg.enable {
+      let cfg = config.basement.netboot; in
+      mkIf cfg.enable {
         boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
         boot.supportedFilesystems = [ "nfs" "nfs4" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
-        boot.initrd.postDeviceCommands = let
+        boot.initrd.postDeviceCommands =
+          let
             script = pkgs.writeScript "mount-dhcp" ''
               #!/bin/sh
               if [ ! -f /etc/basement-mounted ]; then
@@ -87,10 +106,10 @@ with builtins; with lib; {
         uefis = filter (conf: !conf.config.basement.netboot.isRpi) nbConfigs;
         rpis = filter (conf: conf.config.basement.netboot.isRpi) nbConfigs;
 
-        uefiConfigsArr = map (x: { "${x.config.basement.netboot.uuid}" = x.config.system.build.toplevel; }) (uefis);
+        uefiConfigsArr = map (x: { "${x.config.basement.netboot.uid}" = x.config.system.build.toplevel; }) (uefis);
         uefiConfigsMap = foldr (a: b: a // b) { } uefiConfigsArr;
         uefiConfigs = toJSON uefiConfigsMap;
-        rpiConfigsArr = map (x: { "${x.config.basement.netboot.uuid}" = { toplevel = x.config.system.build.toplevel; fw = "${pkgs.raspberrypifw}/share/raspberrypi/boot"; }; }) (rpis);
+        rpiConfigsArr = map (x: { "${x.config.basement.netboot.uid}" = { toplevel = x.config.system.build.toplevel; fw = "${pkgs.raspberrypifw}/share/raspberrypi/boot"; }; }) (rpis);
         rpiConfigsMap = foldr (a: b: a // b) { } rpiConfigsArr;
         rpiConfigs = toJSON rpiConfigsMap;
 
