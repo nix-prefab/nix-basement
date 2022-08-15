@@ -3,7 +3,7 @@ let
   cfg = config.basement.presets.server;
 in
 {
-  options.basement.presets.server.enable = lib.mkEnableOption "Autologin and other server stuff";
+  options.basement.presets.server.enable = lib.mkEnableOption "automatic login and other settings targeted at servers";
   config = lib.mkIf cfg.enable {
     system.activationScripts.powersettings.text = ''
       sudo systemsetup -setcomputersleep Never # no sleep for u
