@@ -60,6 +60,10 @@ with builtins; with lib; {
 
       systemd.services.gitlab-runner.restartIfChanged = true;
 
+      systemd.tmpfiles.rules = [
+        "d /run/gitlab-runner 0755 root root 1d -"
+      ];
+
       services.gitlab-runner = {
         enable = true;
         concurrent = cfg.concurrentJobs;
@@ -92,7 +96,7 @@ with builtins; with lib; {
                     tagList = [ "nix" ];
                     runUntagged = false;
                     executor = "docker";
-                    dockerImage = "alpine:latest";
+                    dockerImage = "archlinux:latest";
                     dockerPrivileged = true;
                     dockerDisableCache = true; # Nix builds are cached through the nix daemon
                     preBuildScript = pkgs.writeScript "nix-setup" ''
@@ -109,6 +113,12 @@ with builtins; with lib; {
                       ${pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixos-unstable nixpkgs
                       ${pkgs.nix}/bin/nix-channel --update nixpkgs
                       ${pkgs.nix}/bin/nix-env -i ${concatStringsSep " " (with pkgs; [ nix cacert git openssh ])}
+
+                      export HOST_EXCHANGE_DIR=/run/gitlab-runner/$CI_JOB_ID
+                      mkdir -p $HOST_EXCHANGE_DIR
+                    '';
+                    postBuildScript = pkgs.writeScript "cleanup" ''
+                      rm -rf $HOST_EXCHANGE_DIR
                     '';
                     environmentVariables = {
                       ENV = "/etc/profile";
@@ -122,6 +132,7 @@ with builtins; with lib; {
                       "/nix/store:/nix/store:ro"
                       "/nix/var/nix/db:/nix/var/nix/db:ro"
                       "/nix/var/nix/daemon-socket:/nix/var/nix/daemon-socket:ro"
+                      "/run/gitlab-runner:/run/gitlab-runner:rw" # Add a directory for exchanging SSH keys with the nix daemon
                     ];
                   })
                 ] else [ ]))

@@ -67,7 +67,7 @@ in
         hostName = "builder";
       }
     ];
-    system.activationScripts.preActivation.text = ''
+    system.activationScripts.nix-basement-linuxvm.text = ''
       mkdir -p '${cfg.dataDir}'
       touch '${cfg.logFile}'
     '';
@@ -79,10 +79,6 @@ in
         StandardOutPath = cfg.logFile;
       };
       script =
-        let
-          # hydraBuildProducts contains `file iso <absolute path to iso>`
-          iso = "${isoImage}/nix-support/hydra-build-products";
-        in
         ''
           echo "[-] define sshprocess function"
           export QCOWPATH="${cfg.dataDir}/nix-store.qcow2"
@@ -105,7 +101,7 @@ in
             -boot d \
             -netdev user,id=mynet0,net=192.168.76.0/24,dhcpstart=192.168.76.9,${concatStringsSep "," (map (x: "hostfwd=${x}") portForwards)} \
             -device virtio-net-pci,netdev=mynet0 \
-            -drive file="$(cat ${iso} | awk '{print($3)}')",media=cdrom,if=none,id=drivers \
+            -drive file="${isoImage}/iso/$(ls ${isoImage}/iso)",media=cdrom,if=none,id=drivers \
             -device usb-storage,drive=drivers \
             -nographic -serial stdio -nodefaults \
             -drive file=${linuxpkgs.OVMF.fd}/FV/AAVMF_CODE.fd,format=raw,if=pflash,readonly=on

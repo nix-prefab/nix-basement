@@ -39,6 +39,6 @@ for input in "$@"; do
         ENCRYPT+=(--recipient "$key")
     done <<< "$KEYS"
 
-    ${ageBin} -a "${ENCRYPT[@]}" -o "${FILE}" < "${input}"
+    ${ageBin} "${ENCRYPT[@]}" -o "${FILE}" < "${input}"
     rm "$input"
 done

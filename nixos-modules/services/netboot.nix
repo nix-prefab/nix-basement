@@ -16,7 +16,7 @@ with builtins; with lib; {
         uid = mkOption {
           description = ''
             On a UEFI/BIOS system, the MAC Address of the PXEing interface.
-            On a Raspberry Pi, it's Serial.
+            On a Raspberry Pi, its Serial.
 
             To get a RPi's Serial run <literal>cat /proc/cpuinfo | grep Serial | tail -c 9</literal> on it.
           '';
@@ -44,9 +44,7 @@ with builtins; with lib; {
     (
       let cfg = config.basement.netboot; in
       mkIf cfg.enable {
-        boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
-        boot.supportedFilesystems = [ "nfs" "nfs4" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
         boot.initrd.postDeviceCommands =
           let
@@ -123,7 +121,7 @@ with builtins; with lib; {
             echo Your booting will now be implemented.
             echo
             echo You'll experience a sensation of IP and then booting.
-            echo Remain calm while your operating system is extracted.
+            echo Remain calm while your operating system is being extracted.
             echo
             dhcp || goto dhcp_fail
             echo IP address: ''${net0/ip} ; echo Subnet mask: ''${net0/netmask}
