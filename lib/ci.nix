@@ -1,9 +1,12 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  generateBuildJobs = flake: system:
+  generateBuildJobs = flake: pkgs:
+    let
+      system = pkgs.system;
+    in
     rec {
-      combined = flake.legacyPackages.${system}.runCommand "build-jobs-${system}" { } ''
+      combined = pkgs.runCommand "build-jobs-${system}" { } ''
         mkdir -p $out && cd $out
 
         ${concatStringsSep "\n" (

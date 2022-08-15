@@ -1,4 +1,4 @@
-{ pkgs, lib, modulesPath, ... }:
+{ config, pkgs, lib, modulesPath, ... }:
 with lib;
 let
   cfg = config.basement.presets.darwin-iso;
@@ -6,9 +6,9 @@ in
 {
   options.basement.presets.darwin-iso.enable = mkEnableOption "Preset for VMs booted by the linuxvm darwinModule";
   config = mkIf cfg.enable {
-    imports = [
-      "${modulesPath}/installer/cd-dvd/installation-cd-minimal-new-kernel.nix"
-    ];
+    # imports = [
+    #   "${modulesPath}/installer/cd-dvd/installation-cd-minimal-new-kernel.nix"
+    # ];
     boot.loader.timeout = lib.mkForce 1; # we don't have the whole week
     services.getty.autologinUser = lib.mkForce null;
     environment.defaultPackages = lib.mkForce [ ];

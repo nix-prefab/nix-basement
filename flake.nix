@@ -42,17 +42,13 @@
     } // (flake-utils.lib.eachDefaultSystem (system:
       let
         # import nixpkgs for the current system and set options
-        pkgs = import "${inputs.nixpkgs}" {
+        pkgs = loadPkgs inputs {
           inherit system;
           allowUnfree = true;
-          overlays = [
-            self.overlays.default
-          ];
         };
       in
       {
         # system-specific outputs
-        legacyPackages = pkgs; # Emit nixpkgs with our overlay
 
         packages = self.apps.${system};
 
@@ -103,7 +99,7 @@
           '';
         };
 
-        buildJobs = generateBuildJobs self system;
+        buildJobs = generateBuildJobs self pkgs;
 
       }
     ));

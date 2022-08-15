@@ -10,7 +10,7 @@ with builtins; with lib; {
         in
         metaConfig // (nixosSystem {
           inherit (metaConfig) system;
-          pkgs = flake.legacyPackages.${metaConfig.system};
+          pkgs = loadPkgs inputs { inherit (metaConfig) system; };
           specialArgs = {
             inherit inputs flake;
             lib = flake.lib;
