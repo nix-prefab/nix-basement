@@ -113,12 +113,10 @@ with builtins; with lib; {
                       ${pkgs.nix}/bin/nix-channel --add https://nixos.org/channels/nixos-unstable nixpkgs
                       ${pkgs.nix}/bin/nix-channel --update nixpkgs
                       ${pkgs.nix}/bin/nix-env -i ${concatStringsSep " " (with pkgs; [ nix cacert git openssh ])}
-
-                      export HOST_EXCHANGE_DIR=/run/gitlab-runner/$CI_JOB_ID
-                      mkdir -p $HOST_EXCHANGE_DIR
+                      mkdir -p $HOST_EXCHANGE_DIR/$CI_JOB_ID
                     '';
                     postBuildScript = pkgs.writeScript "cleanup" ''
-                      rm -rf $HOST_EXCHANGE_DIR
+                      rm -rf $HOST_EXCHANGE_DIR/$CI_JOB_ID
                     '';
                     environmentVariables = {
                       ENV = "/etc/profile";
@@ -127,6 +125,7 @@ with builtins; with lib; {
                       NIX_SSL_CERT_FILE = "/nix/var/nix/profiles/default/etc/ssl/certs/ca-bundle.crt";
                       NIX_PATH = "/root/.nix-defexpr/channels";
                       PATH = "/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:/bin:/sbin:/usr/bin:/usr/sbin";
+                      HOST_EXCHANGE_DIR = "/run/gitlab-runner";
                     };
                     dockerVolumes = [
                       "/nix/store:/nix/store:ro"
