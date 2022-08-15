@@ -7,7 +7,7 @@ in
   config = lib.mkIf cfg.enable {
     system.activationScripts.powersettings.text = ''
       sudo systemsetup -setcomputersleep Never # no sleep for u
-      sudo systemsetup -setrestartpowerfailure on # start when it get's power
+      sudo systemsetup -setrestartpowerfailure on # start when it gets power
     '';
     nix.trustedUsers = [ "user" ];
     system.defaults = {
