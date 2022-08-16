@@ -30,14 +30,13 @@
       nixosModules = findNixosModules self;
       darwinModules = attrValues (findDarwinModules self);
 
-      overlays = {
-        default = final: prev: {
+      overlays = findOverlays self true
+        (final: prev: {
           inherit lib; # overwrite pkgs.lib with our extended lib
           agenix = inputs.agenix.packages.${prev.system}.agenix;
           base = self.packages.${prev.system}; # Add our packages to the base scope
           deploy-rs = inputs.deploy-rs.packages.${prev.system};
-        };
-      };
+        });
 
     } // (flake-utils.lib.eachDefaultSystem (system:
       let
@@ -77,7 +76,6 @@
                 };
               })
               (find "" "${self}/scripts")
-
           );
 
         devShells.default =
