@@ -5,15 +5,18 @@ import json
 import urllib.request
 
 def fetchKeys(user: str, url: str) -> []:
-    keys = [
-        x.strip() for x in
-        urllib.request \
-            .urlopen(url) \
-            .read() \
-            .decode("UTF-8") \
-            .split("\n")
-        if x.strip() != ""
-    ]
+    if url == "MANUAL":
+      keys = data["keys"][user]
+    else:
+      keys = [
+          x.strip() for x in
+          urllib.request \
+              .urlopen(url) \
+              .read() \
+              .decode("UTF-8") \
+              .split("\n")
+          if x.strip() != ""
+      ]
     print(f"{user}:\t{len(keys)}")
     return keys
 
