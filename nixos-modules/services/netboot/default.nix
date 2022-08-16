@@ -70,7 +70,7 @@ with builtins; with lib; {
             done
             echo "[nix-basement] mounted '/' and '/nix'"
           '';
-        fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount" ]; };
+        initrd.fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount"  ]; };
         fileSystems."/nix/.rw-store" =
           {
             fsType = "tmpfs";
