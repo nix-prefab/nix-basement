@@ -47,6 +47,7 @@ with builtins; with lib; {
       let cfg = config.basement.netboot; in
       mkIf cfg.enable {
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
+        boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
         boot.initrd.network.postCommands =
           let
@@ -70,7 +71,7 @@ with builtins; with lib; {
             done
             echo "[nix-basement] mounted '/' and '/nix'"
           '';
-        initrd.fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount"  ]; };
+        fileSystems."/" = { device = "tmpfs"; fsType = "tmpfs"; options = [ "size=2G" "remount" ]; };
         fileSystems."/nix/.rw-store" =
           {
             fsType = "tmpfs";
