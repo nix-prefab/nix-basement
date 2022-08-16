@@ -13,6 +13,8 @@ in
     services.getty.autologinUser = lib.mkForce null;
     environment.defaultPackages = lib.mkForce [ ];
     nix.gc.automatic = true;
+    networking.usePredictableInterfaceNames = false;
+    networking.interfaces."eth0".useDHCP = true;
     boot.loader.grub.enable = false;
     boot.initrd.availableKernelModules = [ "overlay" "virtio_net" "virtio_pci" "virtio_mmio" "virtio_blk" "virtio_scsi" "9p" "9pnet_virtio" ];
     boot.initrd.kernelModules = [ "virtio_balloon" "virtio_console" "virtio_rng" ];
