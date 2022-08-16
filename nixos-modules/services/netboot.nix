@@ -12,21 +12,23 @@ with builtins; with lib; {
       };
       default = { };
       type = submodule {
-        enable = mkEnableOption "Enables nix-basement netboot client configuration";
-        uid = mkOption {
-          description = ''
-            On a UEFI/BIOS system, the MAC Address of the PXEing interface.
-            On a Raspberry Pi, its Serial.
+        options = {
+          enable = mkEnableOption "Enables nix-basement netboot client configuration";
+          uid = mkOption {
+            description = ''
+              On a UEFI/BIOS system, the MAC Address of the PXEing interface.
+              On a Raspberry Pi, its Serial.
 
-            To get a RPi's Serial run <literal>cat /proc/cpuinfo | grep Serial | tail -c 9</literal> on it.
-          '';
-          type = str;
-          example = "d2:ed:80:67:e1:5f";
-        };
-        isRpi = mkOption {
-          description = "is this a raspberry pi?";
-          type = bool;
-          default = false;
+              To get a RPi's Serial run <literal>cat /proc/cpuinfo | grep Serial | tail -c 9</literal> on it.
+            '';
+            type = str;
+            example = "d2:ed:80:67:e1:5f";
+          };
+          isRpi = mkOption {
+            description = "is this a raspberry pi?";
+            type = bool;
+            default = false;
+          };
         };
       };
     };
