@@ -48,7 +48,7 @@ with builtins; with lib; {
       mkIf cfg.enable {
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
-        boot.initrd.postDeviceCommands =
+        boot.initrd.network.postCommands =
           let
             script = pkgs.writeScript "mount-dhcp" ''
               #!/bin/sh
