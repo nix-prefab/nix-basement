@@ -55,7 +55,7 @@ with builtins; with lib; {
               ++
               (attrValues
                 (filterAttrs
-                  (name': _: elem name value.authorizedUsers)
+                  (name': _: elem name' value.authorizedUsers)
                   (configFile.keys)
                 )
               )
