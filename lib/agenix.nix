@@ -2,14 +2,14 @@
 with builtins; with lib; {
   generateSecretsNix = flake: (
     let
-      keyJSON = fromJSON (readFile "${flake}/authorizedKeys.json");
+      keyConfig = import "${flake}/authorizedKeys.nix";
 
       # All keys of the users listed as maintainers (can decrypt all secrets)
       maintainerKeys = flatten (
         attrValues
           (filterAttrs
-            (user: key: elem user keyJSON.maintainers) # is the user a maintainer?
-            keyJSON.keys
+            (user: key: elem user keyConfig.maintainers) # is the user a maintainer?
+            keyConfig.keys
           )
       );
 
