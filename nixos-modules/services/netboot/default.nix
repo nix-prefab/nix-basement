@@ -144,8 +144,8 @@ with builtins; with lib; {
 
         netbootDir = pkgs.runCommand "basement-netboot" { } ''
           mkdir $out
-          ${pkgs.python3}/bin/python ${./netboot/generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
-          ${pkgs.python3}/bin/python ${./netboot/generateRpiConfigs.py} '${rpiConfigs}'
+          ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
+          ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
         '';
 
 
