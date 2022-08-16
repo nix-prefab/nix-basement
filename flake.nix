@@ -49,9 +49,7 @@
       {
         # system-specific outputs
 
-        packages = self.apps.${system};
-
-        apps = listToAttrs
+        packages = listToAttrs
           (
             map
               (file: rec {
@@ -68,9 +66,11 @@
                     gnused
                     jq
                     nixFlakes
+                    nixfmt
                     python3
                     rage
                     ;
+
                   wireguard = pkgs.wireguard-tools;
                   nixpkgs = toString inputs.nixpkgs;
                 };
@@ -78,16 +78,26 @@
               (find "" "${self}/scripts")
           );
 
+        apps = mapAttrs
+          (name: value:
+            (flake-utils.lib.mkApp {
+              inherit name;
+              drv = value;
+            })
+          )
+          inputs.self.packages.${system};
+
         devShells.default =
           pkgs.mkShell {
-            buildInputs = with pkgs; flatten [
-              agenix
-              deploy-rs.deploy-rs
-              nixpkgs-fmt
-              rage
+            buildInputs = with pkgs;
+              flatten [
+                agenix
+                deploy-rs.deploy-rs
+                nixpkgs-fmt
+                rage
 
-              (attrValues self.apps.${system})
-            ];
+                (attrValues self.packages.${system})
+              ];
           };
 
         checks = {

@@ -2,6 +2,7 @@
 # code: language=python tabSize=4
 
 import json
+import subprocess
 import urllib.request
 
 def fetchKeys(user: str, url: str) -> []:
@@ -20,16 +21,24 @@ def fetchKeys(user: str, url: str) -> []:
     print(f"{user}:\t{len(keys)}")
     return keys
 
-filename = "authorizedKeys.json"
+filename = "authorizedKeys.nix"
 
-data = {}
-with open(filename, "r") as f:
-    data = json.loads(f.read())
+data = json.loads(
+  subprocess.check_output(["@nixFlakes@/bin/nix", "eval", "--json", "-f", filename])
+)
 
 data["keys"] = {
     user: fetchKeys(user, url) for (user,url) in data["users"].items()
 }
 
+nix = subprocess.check_output(
+  ["@nixfmt@/bin/nixfmt"],
+  input = subprocess.check_output(
+    ["@nixFlakes@/bin/nix", "eval", "--impure", "--expr", "builtins.fromJSON (builtins.readFile \"/dev/stdin\")"],
+    input=json.dumps(data).encode("UTF-8")
+  )
+).decode("UTF-8")
+
 with open(filename, "w") as f:
-    f.write(json.dumps(data, indent = 2))
+    f.write(nix)
     f.flush()
