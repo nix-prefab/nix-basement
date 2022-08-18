@@ -266,8 +266,5 @@ with builtins; with lib; {
       }
     )
   ];
-  meta = {
-    doc = ./default.xml;
-  };
 
 }
