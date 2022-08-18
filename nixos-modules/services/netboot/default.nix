@@ -19,7 +19,7 @@ with builtins; with lib; {
               On a UEFI/BIOS system, the MAC Address of the PXEing interface.
               On a Raspberry Pi, its Serial.
 
-              To get a RPi's Serial run <literal>cat /proc/cpuinfo | grep Serial | tail -c 9</literal> on it.
+              To get a RPi's Serial run <programlisting>cat /proc/cpuinfo | grep Serial | tail -c 9</programlisting> on it.
             '';
             type = str;
             example = "d2:ed:80:67:e1:5f";
@@ -36,7 +36,7 @@ with builtins; with lib; {
     enable = mkEnableOption "Enables the nix-basement netboot server";
     configurations = mkOption {
       description = ''All the nixosConfigurations that should be bootable
-        all configurations have to have a `networking.hostName` and a `basement.netboot.uid`
+        all configurations have to have a <option>networking.hostName</option> and a <option>basement.netboot.uid</option>
       '';
       type = listOf raw;
     };

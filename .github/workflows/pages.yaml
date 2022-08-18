@@ -1,0 +1,45 @@
+name: Deploy Documentation to pages
+on: [push]
+jobs:
+  build-docs:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v3
+      - name: Install nix ❄️
+        uses: cachix/install-nix-action@v16
+      - name: Build 🛠️
+        id: build
+        run: |
+          export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
+          echo "::set-output name=system::$SYSTEM"
+          nix build ".#docs.${SYSTEM}.manual.html" -vL
+          echo "::set-output name=html::$(readlink result)/share/doc/nix-basement"
+      - name: Artifact  📦
+        uses: actions/upload-pages-artifact@v1.0.3
+        with:
+          path: ${{ steps.build.outputs.html }}
+
+  # Deploy job
+  deploy-docs:
+    # Add a dependency to the build job
+    if: github.ref == 'refs/heads/main'
+    needs: build-docs
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

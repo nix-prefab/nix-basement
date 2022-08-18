@@ -1,0 +1,23 @@
+<book xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      xmlns:xi="http://www.w3.org/2001/XInclude"
+      version="5.0"
+      xml:id="book-nix-basement-manual">
+ <info>
+  <title>nix-basement Manual</title>
+ </info>
+ <preface>
+  <title>Preface</title>
+  <para>
+   This manual will eventually describe how to install and use nix-basement.
+  </para>
+ </preface>
+ <appendix xml:id="ch-nixos-options">
+  <title>NixOS Module Options</title>
+  <xi:include href="./nmd-result/nixos-options.xml" />
+ </appendix>
+ <appendix xml:id="ch-nix-darwin-options">
+  <title>nix-darwin Module Options</title>
+  <xi:include href="./nmd-result/nix-darwin-options.xml" />
+ </appendix>
+</book>

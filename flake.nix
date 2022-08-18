@@ -28,7 +28,7 @@
       inherit lib;
 
       nixosModules = findNixosModules self;
-      darwinModules = attrValues (findDarwinModules self);
+      darwinModules = findDarwinModules self;
 
       overlays = {
         default = final: prev: {
@@ -100,6 +100,7 @@
         };
 
         buildJobs = generateBuildJobs self pkgs;
+        docs = (import ./docs { inherit pkgs lib inputs; });
 
       }
     ));

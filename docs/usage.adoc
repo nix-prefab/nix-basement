@@ -1,0 +1,68 @@
+[[ch-usage]]
+== Using nix-basement
+
+nix-basement is meant to be used as an input to a nix-flake
+
+[source,nix]
+----
+{
+  description = "A very basic flake";
+
+  inputs = {
+    base.url = "github:nix-basement/nix-basement/main";
+  };
+
+  outputs = directInputs:
+    let
+      inputs = directInputs.base.inputs // directInputs;
+      inherit (inputs)
+        base
+        flake-utils
+        nixpkgs
+        darwin
+        self
+        ;
+      lib = base.lib;
+    in
+    with builtins; with lib; (
+      base.outputs
+      //
+      {
+        nixosModules = { };
+        # nixosModules = findNixosModules self;
+
+        nixosConfigurations = generateNixosConfigurations inputs;
+        darwinConfigurations = generateDarwinConfigurations inputs;
+
+        deploy = generateDeployConfig self;
+        devShells = base.devShells;
+
+        darwinConfigurations."bach" = darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+          inputs = { inherit self nixpkgs base darwin inputs; };
+          modules = [
+            ({ pkgs, ... }: {
+              programs.zsh.enable = true;
+              services.nix-daemon.enable = true;
+              basement.presets.server.enable = true;
+              basement.virtualization.linuxvm.enable = true;
+              basement.virtualization.linuxvm.configuration = self.nixosConfigurations.vmtest;
+              basement.services.gitlab-runner.enable = true;
+              nix.package = pkgs.nixFlakes;
+              nix.trustedUsers = [ "user" ];
+
+            })
+          ] ++ base.darwinModules;
+
+
+        };
+      }
+      //
+      (flake-utils.lib.eachDefaultSystem (system: {
+
+        buildJobs = generateBuildJobs self system;
+
+      }))
+    );
+}
+----
