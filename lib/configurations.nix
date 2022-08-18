@@ -72,7 +72,7 @@ with builtins; with lib; {
       (flatten
         (mapAttrsToList
           (name: input:
-            if input ? nixosModules
+            if input ? darwinModules
             then
               (
                 let
