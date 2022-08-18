@@ -32,15 +32,102 @@ with builtins; with lib; {
         };
       };
     };
-  options.basement.services.netboot-host = with types; {
-    enable = mkEnableOption "Enables the nix-basement netboot server";
-    configurations = mkOption {
-      description = ''All the nixosConfigurations that should be bootable
-        all configurations have to have a <option>networking.hostName</option> and a <option>basement.netboot.uid</option>
+  options.basement.services.netboot-host = with types;
+    mkOption {
+      description = ''
+        This is the server component of the nix-basement netboot system.
+        </para>
+        <para>
+        To use it, your DHCP Server needs to have PXE configured to boot
+        <itemizedlist>
+          <listitem>
+            <para>
+              <literal>undionly</literal> for X86 BIOS systems
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <literal>snponly.efi</literal> for X86-64 UEFI systems
+            </para>
+          </listitem>
+        </itemizedlist>
+        of the tftp server running as part of this module.
+        </para>
+        <para>
+        The following <citerefentry>
+        <refentrytitle>dnsmasq</refentrytitle>
+        <manvolnum>1</manvolnum>
+        </citerefentry> configuration is known to work (with 192.168.3.1 as the netboot server)
+        <programlisting>
+        dhcp-boot=undionly,192.168.3.1
+        dhcp-vendorclass=BIOS,PXEClient:Arch:00000
+        dhcp-vendorclass=UEFI32,PXEClient:Arch:00006
+        dhcp-vendorclass=UEFI,PXEClient:Arch:00007
+        dhcp-vendorclass=UEFI64,PXEClient:Arch:00009
+        dhcp-boot=net:UEFI,snponly.efi,192.168.3.1
+        dhcp-boot=net:UEFI64,snponly.efi,192.168.3.1
+        pxe-prompt="nix-basement netboot", 0
+        pxe-service=X86PC, "biosboot", undionly,192.168.3.1
+        pxe-service=X86PC, "biosboot", unionly,192.168.3.1
+        pxe-service=X86-64_EFI, "uefi boot", snponly.efi,192.168.3.1
+        pxe-service=X86-64_EFI, "uefi boot", snponly.efi,192.168.3.1
+        pxe-service=0,"other boot",192.168.3.1
+        </programlisting>
+        </para>
+        <para>
+        The netboot server will do the following:
+        <itemizedlist>
+          <listitem>
+            <para>
+              Build the nixos configurations in into it's store
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Create a directory with all configurations and supplementary ipxe configuration
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Make this directory accessible via HTTP and TFTP (ipxe boots via HTTP)
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              Make the nix store accessible via NFS
+            </para>
+          </listitem>
+        </itemizedlist>
+        </para>
+        <para>
+        Clients will boot via PXE, get their kernel/initramfs via HTTP (or TFTP on Raspberry Pis) and mount the NFS Store read only.
       '';
-      type = listOf raw;
+      example = {
+        enable = true;
+        configurations = literalExpression "[ inputs.self.nixosConfigurations.host1 ]";
+      };
+      default = { };
+      type = submodule
+        {
+          options = {
+            enable = mkEnableOption "Enables the nix-basement netboot server";
+            nfsRanges = mkOption {
+              description = "IP ranges the NFS Server should expose the nix-store on";
+              default = ["*"];
+              example = ["192.168.3.0/24"];
+            };
+            configurations = mkOption {
+              description = ''
+                All the nixosConfigurations that should be bootable
+                all configurations have to have a <option>networking.hostName</option> and a <option>basement.netboot.uid</option>
+              '';
+              type = listOf raw;
+            };
+          };
+        };
+
     };
-  };
+
 
   config = mkMerge [
     (
@@ -163,8 +250,8 @@ with builtins; with lib; {
         services.nfs.server = {
           enable = true;
           exports = ''
-            /export *(ro,fsid=0,no_subtree_check)
-            /export/nixstore *(ro,nohide,insecure,no_subtree_check)
+            /export ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRange)}
+            /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRange)}
           '';
         };
         services.nginx = {
@@ -179,5 +266,8 @@ with builtins; with lib; {
       }
     )
   ];
+  meta = {
+    doc = ./default.xml;
+  };
 
 }

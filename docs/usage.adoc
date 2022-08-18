@@ -1,7 +1,9 @@
 [[ch-usage]]
 == Using nix-basement
 
-nix-basement is meant to be used as an input to a nix-flake
+nix-basement is meant to be used as an input to a nix-flake.
+
+Example flake:
 
 [source,nix]
 ----
@@ -28,8 +30,6 @@ nix-basement is meant to be used as an input to a nix-flake
       base.outputs
       //
       {
-        nixosModules = { };
-        # nixosModules = findNixosModules self;
 
         nixosConfigurations = generateNixosConfigurations inputs;
         darwinConfigurations = generateDarwinConfigurations inputs;
@@ -37,25 +37,6 @@ nix-basement is meant to be used as an input to a nix-flake
         deploy = generateDeployConfig self;
         devShells = base.devShells;
 
-        darwinConfigurations."bach" = darwin.lib.darwinSystem {
-          system = "aarch64-darwin";
-          inputs = { inherit self nixpkgs base darwin inputs; };
-          modules = [
-            ({ pkgs, ... }: {
-              programs.zsh.enable = true;
-              services.nix-daemon.enable = true;
-              basement.presets.server.enable = true;
-              basement.virtualization.linuxvm.enable = true;
-              basement.virtualization.linuxvm.configuration = self.nixosConfigurations.vmtest;
-              basement.services.gitlab-runner.enable = true;
-              nix.package = pkgs.nixFlakes;
-              nix.trustedUsers = [ "user" ];
-
-            })
-          ] ++ base.darwinModules;
-
-
-        };
       }
       //
       (flake-utils.lib.eachDefaultSystem (system: {
@@ -64,5 +45,47 @@ nix-basement is meant to be used as an input to a nix-flake
 
       }))
     );
+}
+----
+
+[[sec-usage-nixos]]
+=== NixOS Configuration
+
+nix-basement (and it's `generateNixosConfiguration` function) searches for a `hosts/{hostname}/default.nix` looking like this:
+
+[source,nix]
+----
+{ ... }: {
+  system = "x86_64-linux"; # or "aarch64-linux", ...
+  modules = [
+    # NixOS modules of this configuration, for example `[ ./configuration.nix ]` with your system specific configuraition
+  ];
+
+  # and optionally deployment configuration (deploy.rs)
+  deployment = {
+    targetUser = "root"; # root or a user that can sudo passwordless
+    targetHost = "192.168.1.1"; # ip or hostname of the server
+    substituteOnDestination = true; # if true the server tries to download needed store paths from caches
+  };
+
+}
+----
+
+[NOTE]
+the `deployment` block is entirely optional and can be omitted
+
+[[sec-usage-nix-darwin]]
+=== nix-darwin Configuration
+
+Similar to NixOS, nix-basement (and it's `generateDarwinConfiguration` function) searches for a `hosts/{hostname}/default.nix` looking like this:
+
+[source,nix]
+----
+{ ... }: {
+  system = "x86_64-darwin"; # or "aarch64-darwin"
+  modules = [
+    # nix-darwin modules of this configuration, for example `[ ./configuration.nix ]` with your system specific configuraition
+  ];
+
 }
 ----

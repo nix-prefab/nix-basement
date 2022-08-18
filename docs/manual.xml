@@ -12,6 +12,7 @@
    This manual will eventually describe how to install and use nix-basement.
   </para>
  </preface>
+ <xi:include href="usage.xml" />
  <appendix xml:id="ch-nixos-options">
   <title>NixOS Module Options</title>
   <xi:include href="./nmd-result/nixos-options.xml" />
