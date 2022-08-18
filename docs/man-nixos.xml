@@ -1,0 +1,21 @@
+<refentry xmlns="http://docbook.org/ns/docbook"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xi="http://www.w3.org/2001/XInclude">
+ <refmeta>
+  <refentrytitle>nix-basement</refentrytitle>
+  <manvolnum>7</manvolnum>
+  <refmiscinfo class="source">nix-basement</refmiscinfo>
+<!-- <refmiscinfo class="version"><xi:include href="version.txt" parse="text"/></refmiscinfo> -->
+ </refmeta>
+ <refnamediv>
+  <refname>nix-basement</refname>
+  <refpurpose>Nix Basement NixOS options</refpurpose>
+ </refnamediv>
+ <refsection>
+  <title>Options</title>
+  <para>
+   You can use the following options in your configuration:
+  </para>
+  <xi:include href="./nmd-result/nixos-options.xml" />
+ </refsection>
+</refentry>
