@@ -61,7 +61,7 @@ with builtins; with lib; {
       )
       (readDir "${inputs.self}/hosts");
 
-  mkHostNameModule = name:
+  mkHostNameModuleD = name:
     { config, ... }: {
       networking.hostName = mkDefault name;
     };
