@@ -77,7 +77,7 @@ the `deployment` block is entirely optional and can be omitted
 [[sec-usage-nix-darwin]]
 === nix-darwin Configuration
 
-Similar to NixOS, nix-basement (and it's `generateDarwinConfiguration` function) searches for a `hosts/{hostname}/default.nix` looking like this:
+Similar to NixOS, nix-basement (and it's `generateDarwinConfiguration` function) searches for a `darwin-hosts/{hostname}/default.nix` looking like this:
 
 [source,nix]
 ----

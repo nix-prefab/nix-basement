@@ -8,4 +8,5 @@
   </copyright>
  </info>
  <xi:include href="man-nixos.xml" />
+ <xi:include href="man-darwin.xml" />
 </reference>
