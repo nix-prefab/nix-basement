@@ -18,7 +18,7 @@ in
         enable = mkEnableOption "Enables a Linux VM";
         configuration = mkOption {
           type = types.raw;
-          description = ''nixosConfiguration (of system aarch64) that has <literal>nix-basement.presets.darwin-iso.enable = true</literal>'';
+          description = ''nixosConfiguration (of system aarch64) that has <literal>nix-basement.presets.darwinvm.enable = true</literal>'';
         };
         dataDir = mkOption {
           default = "/var/lib/linuxvm";
@@ -68,14 +68,6 @@ in
     };
   };
   config = lib.mkIf cfg.enable {
-    nix.buildMachines = [
-      {
-        systems = [ "aarch64-linux" ];
-        supportedFeatures = [ "kvm" "big-parallel" ];
-        maxJobs = 8;
-        hostName = "builder";
-      }
-    ];
     system.activationScripts.nix-basement-linuxvm.text = ''
       mkdir -p '${cfg.dataDir}'
       touch '${cfg.logFile}'
