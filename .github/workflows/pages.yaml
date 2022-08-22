@@ -23,11 +23,11 @@ jobs:
           export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
           echo "::set-output name=system::$SYSTEM"
           nix build ".#docs.${SYSTEM}.manual.html" -vL
-          echo "::set-output name=html::$(readlink result)/share/doc/nix-basement"
+          cp -r result/share/doc/nix-basement ./_docs
       - name: Publish 🗞
         uses: netlify/actions/cli@master
         with:
-          args: deploy --dir=${{ steps.build.outputs.html }}
+          args: deploy --prod --dir=_docs
         env:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
