@@ -1,16 +1,14 @@
-name: Deploy Documentation to pages
+name: Deploy Documentation to netlify
+
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
+
 concurrency:
-  group: "pages"
+  group: "netlify"
   cancel-in-progress: true
-  # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-permissions:
-  pages: write      # to deploy to Pages
-  id-token: write   # to verify the deployment originates from an appropriate source
-  contents: read
+
 jobs:
   build-deploy-docs:
     runs-on: ubuntu-latest
