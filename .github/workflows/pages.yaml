@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-deploy-docs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -24,10 +24,10 @@ jobs:
           echo "::set-output name=system::$SYSTEM"
           nix build ".#docs.${SYSTEM}.manual.html" -vL
           echo "::set-output name=html::$(readlink result)/share/doc/nix-basement"
-    - name: Publish 🗞
-      uses: netlify/actions/cli@master
-      with:
-        args: deploy --dir=${{ steps.build.outputs.html }}
-      env:
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      - name: Publish 🗞
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=${{ steps.build.outputs.html }}
+        env:
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
