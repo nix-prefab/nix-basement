@@ -95,8 +95,7 @@ Similar to NixOS, nix-basement (and it's `generateDarwinConfiguration` function)
 
 The darwin option `basement.virtualization.linuxvm` provides an easy way to host a linux VM on your mac.
 
-[TIP]
-This is a useful way to get a *fast* aarch64 NixOS machine.
+TIP: This is a useful way to get a *fast* aarch64 NixOS machine.
 
 To enable it, put the following inside your `configuration.nix`
 
