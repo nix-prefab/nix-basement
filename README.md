@@ -1,3 +1,3 @@
 # nix-basement
 
-## [Documentation](https://nix-basement.github.io/nix-basement/)
+## [Documentation](https://melodious-florentine-5ff546.netlify.app)

@@ -12,7 +12,7 @@ permissions:
   id-token: write   # to verify the deployment originates from an appropriate source
   contents: read
 jobs:
-  build-docs:
+  build-deploy-docs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout 🛎️
@@ -26,23 +26,10 @@ jobs:
           echo "::set-output name=system::$SYSTEM"
           nix build ".#docs.${SYSTEM}.manual.html" -vL
           echo "::set-output name=html::$(readlink result)/share/doc/nix-basement"
-      - name: Artifact  📦
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: ${{ steps.build.outputs.html }}
-
-  # Deploy job
-  deploy-docs:
-    needs: build-docs
-
-    # Deploy to the github-pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    # Specify runner + deployment step
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
+    - name: Publish 🗞
+      uses: netlify/actions/cli@master
+      with:
+        args: deploy --dir=${{ steps.build.outputs.html }}
+      env:
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
