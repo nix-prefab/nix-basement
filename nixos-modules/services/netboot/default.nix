@@ -113,8 +113,8 @@ with builtins; with lib; {
             enable = mkEnableOption "Enables the nix-basement netboot server";
             nfsRanges = mkOption {
               description = "IP ranges the NFS Server should expose the nix-store on";
-              default = ["*"];
-              example = ["192.168.3.0/24"];
+              default = [ "*" ];
+              example = [ "192.168.3.0/24" ];
             };
             configurations = mkOption {
               description = ''
