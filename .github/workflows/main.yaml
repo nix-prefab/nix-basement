@@ -1,8 +1,10 @@
 name: Run flake checks
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - master
+  pull_request: {}
 
 jobs:
   check:
