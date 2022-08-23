@@ -46,6 +46,7 @@ in
         type = str;
         description = "Backup schedule in systemd format";
         default = config.services.postgresqlBackup.startAt;
+        defaultText = literalExpression "config.services.postgresqlBackup.startAt";
       };
     };
   };
