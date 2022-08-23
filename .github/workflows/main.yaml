@@ -19,6 +19,9 @@ jobs:
       - name: Run checks ✅
         run: nix flake check
 
+      - name: Check Conventional Commits 📝
+        uses: webiny/action-conventional-commits@v1.0.5
+
   build:
     strategy:
       matrix:
