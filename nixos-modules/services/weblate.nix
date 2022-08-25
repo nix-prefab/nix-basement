@@ -120,6 +120,7 @@ in
         locations."/".proxyPass = "http://${if cfg.address != "0.0.0.0" then cfg.address else "127.0.0.1"}:${toString cfg.port}";
       };
 
+      basement.healthchecks.services = [ "backup-${serviceName}-db" ];
       systemd.services."backup-${serviceName}-db" = {
         script = ''
           ${cmd} exec -i ${serviceName}-db /bin/bash 'PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U $POSTGRES_USER $POSTGRES_DATABASE' > ${cfg.backup.target}/${serviceName}-db.sql
