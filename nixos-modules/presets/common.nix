@@ -18,8 +18,8 @@ with builtins; with lib; {
       vim
     ];
 
-    i18n.defaultLocale = "en_US.UTF-8";
-    console.keyMap = "us";
+    i18n.defaultLocale = mkDefault "en_US.UTF-8";
+    console.keyMap = mkDefault "us";
     time.timeZone = mkDefault "Europe/Berlin";
 
     networking = {
@@ -30,10 +30,10 @@ with builtins; with lib; {
       };
     };
 
-    users = {
+    users = rec {
       defaultUserShell = pkgs.zsh;
-      mutableUsers = false;
-      # users.root.passwordFile = config.assets."root.password";
+      mutableUsers = config.secrets ? "root.password";
+      users.root.passwordFile = mkIf mutableUsers config.secrets."root.password";
     };
     programs.zsh = {
       enable = true;
@@ -64,7 +64,7 @@ with builtins; with lib; {
         auto-optimise-store = true;
       };
       gc = {
-        automatic = mkDefault false;
+        automatic = mkDefault true;
         dates = "weekly";
         options = "--delete-older-than 30d";
       };
