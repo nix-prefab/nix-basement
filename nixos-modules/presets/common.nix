@@ -31,8 +31,8 @@ with builtins; with lib; {
 
     users = rec {
       defaultUserShell = pkgs.zsh;
-      mutableUsers = config.secrets ? "root.password";
-      users.root.passwordFile = mkIf mutableUsers config.secrets."root.password";
+      mutableUsers = !(config.secrets ? "root.password");
+      users.root.passwordFile = mkIf (!mutableUsers) config.secrets."root.password";
     };
     programs.zsh = {
       enable = true;
