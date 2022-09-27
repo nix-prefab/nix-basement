@@ -23,7 +23,6 @@ with builtins; with lib; {
     time.timeZone = mkDefault "Europe/Berlin";
 
     networking = {
-      useDHCP = false; # Is deprecated and has to be set to false
       firewall = {
         enable = true;
         allowPing = true;
