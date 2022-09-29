@@ -23,7 +23,7 @@ with builtins; with lib;
 
       commonAssets = findAssets sharedDir;
       hostAssets = findAssets hostDir;
-      allAssets = if config.basement.useCommonSecrets commonAssets ++ hostAssets else commonAssets;
+      allAssets = if config.basement.useCommonSecrets then commonAssets ++ hostAssets else commonAssets;
 
       findAssets = path: if pathExists path then map (file: removePrefix "${path}/" file) (find "" path) else [ ];
       findAssetSource = name: (if elem name hostAssets then "${hostDir}" else "${sharedDir}") + "/${name}";
