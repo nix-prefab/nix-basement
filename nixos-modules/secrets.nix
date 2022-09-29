@@ -21,9 +21,9 @@ with builtins; with lib;
       sharedDir = "${flake}/secrets";
       hostDir = "${flake}/hosts/${config.system.name}/secrets";
 
-      commonAssets = mkIf config.basement.useCommonSecrets (findAssets sharedDir);
+      commonAssets = findAssets sharedDir;
       hostAssets = findAssets hostDir;
-      allAssets = commonAssets ++ hostAssets;
+      allAssets = if config.basement.useCommonSecrets commonAssets ++ hostAssets else commonAssets;
 
       findAssets = path: if pathExists path then map (file: removePrefix "${path}/" file) (find "" path) else [ ];
       findAssetSource = name: (if elem name hostAssets then "${hostDir}" else "${sharedDir}") + "/${name}";
