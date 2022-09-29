@@ -13,7 +13,10 @@ with builtins; with lib; {
           specialArgs = {
             inherit inputs flake;
             pkgs = loadPkgs inputs { inherit (metaConfig) system; };
-            lib = flake.lib;
+            lib =
+              if flake ? lib
+              then recursiveUpdate lib flake.lib
+              else lib;
             system = metaConfig.system;
           };
           modules = flatten [
@@ -43,7 +46,10 @@ with builtins; with lib; {
           pkgs = loadPkgs inputs { inherit (metaConfig) system; };
           specialArgs = {
             inherit inputs flake;
-            lib = flake.lib;
+            lib =
+              if flake ? lib
+              then recursiveUpdate lib flake.lib
+              else lib;
             system = metaConfig.system;
           };
           modules = flatten [
