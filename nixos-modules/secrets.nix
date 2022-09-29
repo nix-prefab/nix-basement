@@ -10,7 +10,7 @@ with builtins; with lib;
     secrets = mkOption {
       # type = attrsOf str;
     };
-    useCommonSecrets = mkOption {
+    basement.useCommonSecrets = mkOption {
       type = bool;
       default = true;
     };
