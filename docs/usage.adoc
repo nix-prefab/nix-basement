@@ -11,19 +11,37 @@ Example flake:
   description = "A very basic flake";
 
   inputs = {
-    base.url = "github:nix-basement/nix-basement/main";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    base = {
+      url = "github:nix-basement/nix-basement";
+      inputs = {
+        agenix.follows = "agenix";
+        darwin.follows = "darwin";
+        deploy-rs.follows = "deploy-rs";
+        flake-utils.follows = "flake-utils";
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
+
+    darwin = {
+      url = "github:lnl7/nix-darwin/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-utils.url = "github:numtide/flake-utils";
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.utils.follows = "flake-utils";
+    };
   };
 
-  outputs = directInputs:
+
+outputs = inputs@{ self, base, flake-utils, ... }:
     let
-      inputs = directInputs.base.inputs // directInputs;
-      inherit (inputs)
-        base
-        flake-utils
-        nixpkgs
-        darwin
-        self
-        ;
       lib = base.lib;
     in
     with builtins; with lib; (
