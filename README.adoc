@@ -1,0 +1,28 @@
+image::https://img.shields.io/github/checks-status/nix-basement/nix-basement/main?style=for-the-badge[Pipeline status] 
+image::https://img.shields.io/website?style=for-the-badge&up_color=green&up_message=online&url=https%3A%2F%2Fnix-prefab.org[Website status] 
+image::https://forthebadge.com/images/badges/gluten-free.svg[Gluten Free]
+
+
+= nix-basement
+:toc:
+
+[documentation]
+== Documentation
+The full Documentation of all modules is located here:
+
+https://melodious-florentine-5ff546.netlify.app[Documentation]
+
+[what-is]
+== What is nix-basement?
+
+A framework to build nix-flakes supporting:
+
+* networked deployment of both NixOS and (soon) nix-darwin hosts
+* modules to run headless linux VMs on macOS
+* automatic netbooting of NixOS configurations
+* secret management (using agenix)
+
+and more.
+[getting-started]
+== Getting started
+Currently the full documentation is still in progress. We are working on a landing-page with a getting-started guide.
