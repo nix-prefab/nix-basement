@@ -45,8 +45,6 @@ outputs = inputs@{ self, base, flake-utils, ... }:
       lib = base.lib;
     in
     with builtins; with lib; (
-      base.outputs
-      //
       {
 
         nixosConfigurations = generateNixosConfigurations inputs;
