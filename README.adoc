@@ -1,3 +1,8 @@
+image::https://img.shields.io/github/checks-status/nix-basement/nix-basement/main?style=for-the-badge[Pipeline status] 
+image::https://img.shields.io/website?style=for-the-badge&up_color=green&up_message=online&url=https%3A%2F%2Fnix-prefab.org[Website status] 
+image::https://forthebadge.com/images/badges/gluten-free.svg[Gluten Free]
+
+
 = nix-basement
 :toc:
 
