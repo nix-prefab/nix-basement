@@ -30,9 +30,10 @@ Example flake:
       base.outputs
       //
       {
-
-        nixosConfigurations = generateNixosConfigurations inputs;
-        darwinConfigurations = generateDarwinConfigurations inputs;
+        # remove # if you need nixos-configurations (meaning you have /hosts)
+        # nixosConfigurations = generateNixosConfigurations inputs;
+        # remove # if you need darwin-configurations (meaning you have /darwin-hosts)
+        # darwinConfigurations = generateDarwinConfigurations inputs;
 
         deploy = generateDeployConfig self;
         devShells = base.devShells;
