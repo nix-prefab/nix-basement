@@ -11,7 +11,7 @@ with builtins; with lib; {
         metaConfig // (inputs.darwin.lib.darwinSystem {
           inherit (metaConfig) system;
           specialArgs = {
-            inherit inputs flake;
+            inherit inputs flake metaConfig;
             pkgs = loadPkgs inputs { inherit (metaConfig) system; };
             lib = flake.lib;
             system = metaConfig.system;
@@ -42,7 +42,7 @@ with builtins; with lib; {
           inherit (metaConfig) system;
           pkgs = loadPkgs inputs { inherit (metaConfig) system; };
           specialArgs = {
-            inherit inputs flake;
+            inherit inputs flake metaConfig;
             lib = flake.lib;
             system = metaConfig.system;
           };
