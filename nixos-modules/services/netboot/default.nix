@@ -29,6 +29,28 @@ with builtins; with lib; {
             type = bool;
             default = false;
           };
+          runner = mkOption {
+            description = "is this host part of a gitlab-runner fleet, the tftp servers host key needs to have root ssh access to this computer";
+            type = attrsOf (submodule {
+              options = {
+                enable = mkEnableOption "";
+                tags = mkOption {
+                  type = listOf str;
+                  default = [ "netboot" ];
+                };
+                concurrent = mkOption {
+                  type = int;
+                  default = 1;
+                };
+
+              };
+            });
+          };
+          persistentStorage = mkOption {
+            description = "should an rw nfs be mounted at /persistent";
+            type = bool;
+            default = true;
+          };
         };
       };
     };
@@ -144,6 +166,7 @@ with builtins; with lib; {
                 if [ -n "''$tftp" ]; then
                   touch /etc/basement-mounted
                   mount -t nfs4 -o ro $tftp:/nixstore /mnt-root/nix/.ro-store
+                  ${optionalString cfg.persistentStorage ''mount -t nfs4 -o rw $tftp:/storage/${networking.hostName} /mnt-root/persistent''}
                 fi
               fi
             '';
@@ -153,6 +176,7 @@ with builtins; with lib; {
             mkdir -p $targetRoot # creating /
             mount -t tmpfs -o size=2G tmpfs $targetRoot
             mkdir -m 0700 -p $targetRoot/nix/.ro-store # creating /nix
+            ${optionalString cfg.persistentStorage "mkdir -m 0700 -p $targetRoot/persistent"}
             for iface in $(ls /sys/class/net | grep -v ^lo$); do
               udhcpc --quit --now -i $iface -O tftp --script ${script}
             done
@@ -163,6 +187,12 @@ with builtins; with lib; {
           {
             fsType = "tmpfs";
             options = [ "mode=0755" ];
+            neededForBoot = true;
+          };
+        fileSystems."/etc/ssh" = mkIf cfg.persistentStorage
+          {
+            fsType = "bind";
+            device = "/persistent/ssh";
             neededForBoot = true;
           };
 
@@ -181,6 +211,7 @@ with builtins; with lib; {
               "/nix/.rw-store/work"
             ];
           };
+        environment.systemPackages = mkIf cfg.runner.enable [ pkgs.gitlab-runner ];
         boot.initrd.network.enable = true;
         networking.useDHCP = mkForce true;
       }
@@ -191,6 +222,7 @@ with builtins; with lib; {
 
 
         nbConfigs = cfg.configurations;
+        hostNames = map (x: x.config.networking.hostName) cfg.configurations;
         uefis = filter (conf: !conf.config.basement.netboot.isRpi) nbConfigs;
         rpis = filter (conf: conf.config.basement.netboot.isRpi) nbConfigs;
 
@@ -230,11 +262,26 @@ with builtins; with lib; {
           };
         };
 
-        netbootDir = pkgs.runCommand "basement-netboot" { } ''
-          mkdir $out
-          ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
-          ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
-        '';
+        gitlabRunnerServices = (reduce (x: y: x // y)
+          (map
+            (x: {
+              "${x.config.networking.hostName}" = {
+                executor = "ssh";
+                limit = x.config.netboot.runner.concurrent;
+                registrationFlags = [ ];
+              };
+            })
+            nbConfigs
+          )
+        );
+
+        netbootDir =
+          pkgs.runCommand "basement-netboot"
+            { } ''
+            mkdir $out
+            ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
+            ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
+          '';
 
 
       in
@@ -247,11 +294,13 @@ with builtins; with lib; {
           enable = true;
           root = netbootDir;
         };
+        services.gitlab-runner.services = gitlabRunnerServices;
         services.nfs.server = {
           enable = true;
           exports = ''
             /export ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRange)}
             /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRange)}
+            ${concatStringsSep "\n" (map (y: "/export/storage/${y} ${y}(rw,nohide,insecure,no_subtree_check)") hostNames)}
           '';
         };
         services.nginx = {
