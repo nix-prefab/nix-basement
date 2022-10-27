@@ -1,9 +1,6 @@
 { pkgs, lib, inputs, ... }:
+with lib; with builtins;
 let
-  nmdSrc = inputs.nmd;
-
-  nmd = import nmdSrc { inherit lib pkgs; };
-
   # Make sure the used package is scrubbed to avoid actually
   # instantiating derivations.
   scrubbedPkgsModule = {
@@ -16,61 +13,17 @@ let
   };
 
   dontCheckDefinitions = [{ _module.check = false; }];
+  moduleDocJson = import ./_support/optionsGenerator.nix {inherit pkgs lib inputs;};
 
-  buildModulesDocs = args:
-    nmd.buildModulesDocs ({
-      moduleRootPaths = [ ./.. ];
-      mkModuleUrl = path:
-        "https://github.com/nix-basement/nix-basement/blob/main/${path}#blob-path";
-      channelName = "nix-basement";
-    } // args);
 
-  nixosModuleDocs = buildModulesDocs {
-    modules = lib.flatten [ (map (x: ./.. + "/nixos-modules/${x}.nix") (builtins.attrNames inputs.self.nixosModules)) scrubbedPkgsModule dontCheckDefinitions ];
-    docBook = {
-      id = "nixos-options";
-      optionIdPrefix = "nixos-opt";
-    };
-  };
-  darwinModuleDocs = buildModulesDocs {
-    modules = lib.flatten [ (map (x: ./.. + "/darwin-modules/${x}.nix") (builtins.attrNames inputs.self.darwinModules)) scrubbedPkgsModule dontCheckDefinitions ];
-    docBook = {
-      id = "nix-darwin-options";
-      optionIdPrefix = "nix-darwin-opt";
-    };
-  };
-  docs = nmd.buildDocBookDocs {
-    pathName = "nix-basement";
-    projectName = "Nix Basement";
-    modulesDocs = [ nixosModuleDocs darwinModuleDocs ];
-    documentsDirectory = ./.;
-    documentType = "book";
-    chunkToc = ''
-      <toc>
-        <d:tocentry xmlns:d="http://docbook.org/ns/docbook" linkend="book-nix-basement-manual"><?dbhtml filename="index.html"?>
-          <d:tocentry linkend="ch-nixos-options"><?dbhtml filename="nixos-options.html"?></d:tocentry>
-          <d:tocentry linkend="ch-nix-darwin-options"><?dbhtml filename="nix-darwin-options.html"?></d:tocentry>
-        </d:tocentry>
-      </toc>
-    '';
-  };
+
+  nixosModulesJson = moduleDocJson
+    (lib.flatten [ (map (x: ./.. + "/nixos-modules/${x}.nix") (builtins.attrNames inputs.self.nixosModules)) scrubbedPkgsModule dontCheckDefinitions ]);
+  darwinModulesJson = moduleDocJson
+    (lib.flatten [ (map (x: ./.. + "/darwin-modules/${x}.nix") (builtins.attrNames inputs.self.darwinModules)) scrubbedPkgsModule dontCheckDefinitions ]);
 in
 
 {
-  inherit nmdSrc;
-
-  options = {
-    nixos-json = nixosModuleDocs.json.override {
-      path = "share/doc/nix-basement/nixos-modules.json";
-    };
-    darwin-json = darwinModuleDocs.json.override {
-      path = "share/doc/nix-basement/darwin-modules.json";
-    };
-  };
-
-  manPages = docs.manPages;
-
-  manual = { inherit (docs) html htmlOpenTool; };
-
+  inherit nixosModulesJson darwinModulesJson;
 
 }
