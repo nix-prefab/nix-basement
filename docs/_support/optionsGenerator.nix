@@ -1,13 +1,13 @@
 {pkgs,lib,inputs,...}:
-modules:
+{ moduleRootPaths, modules, baseUrl, title }:
 with lib; with builtins;
 let
 
   moduleDocJson = modules: (jsonFile (jsonData (moduleDoc modules)));
 
-  moduleDoc = modules: (map cleanUpOption (sort moduleDocCompare
+  moduleDoc = modules: (map cleanUpOption ((sort moduleDocCompare
     (filter (opt: opt.visible && !opt.internal)
-      (optionAttrSetToDocList (evalModules { inherit modules;}).options)))).json;
+      (optionAttrSetToDocList (evalModules { inherit modules;}).options)))));
   jsonData = optionsDocs: let
     trimAttrs = flip removeAttrs [ "name" "visible" "internal" ];
     attributify = opt: {
@@ -75,7 +75,7 @@ let
 
   mkDeclaration = decl: rec {
     path = stripModulePathPrefixes decl;
-    url = path;
+    url = baseUrl + path;
   };
 
   # We need to strip references to /nix/store/* from the options or
@@ -94,5 +94,13 @@ let
       "<function>"
     else
       x;
+
+  j2a = pkgs.substituteAll { src = ./optionsJsonToAdoc.py; pandoc = pkgs.pandoc; python = pkgs.python3; };
+  jsonToAdoc = jsonFile: pkgs.runCommandNoCC "jsonToAdoc" {} ''
+    ${pkgs.python3}/bin/python3 ${j2a} "${jsonFile}" "${title}" > $out
+  '';
 in
-moduleDocJson modules
+rec {
+ json =  moduleDocJson modules;
+ adoc = jsonToAdoc "${json}/options.json";
+}

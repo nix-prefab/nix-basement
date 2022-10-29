@@ -13,17 +13,34 @@ let
   };
 
   dontCheckDefinitions = [{ _module.check = false; }];
-  moduleDocJson = import ./_support/optionsGenerator.nix {inherit pkgs lib inputs;};
+  moduleDocJson = import ./_support/optionsGenerator.nix { inherit pkgs lib inputs; };
 
+  nixosModulesDoc = moduleDocJson {
+    moduleRootPaths = [ ./.. ];
+    title = "Nix-Basement NixOS Modules";
+    baseUrl = "https://github.com/nix-basement/nix-basement/blob/main/";
+    modules =
+      (lib.flatten [ (map (x: ./.. + "/nixos-modules/${x}.nix") (builtins.attrNames inputs.self.nixosModules)) scrubbedPkgsModule dontCheckDefinitions ]);
+  };
+  darwinModulesDoc = moduleDocJson {
+    moduleRootPaths = [ ./.. ];
+    title = "Nix-Basement nix-darwin Modules";
+    baseUrl = "https://github.com/nix-basement/nix-basement/blob/main/";
+    modules =
+      (lib.flatten [ (map (x: ./.. + "/darwin-modules/${x}.nix") (builtins.attrNames inputs.self.darwinModules)) scrubbedPkgsModule dontCheckDefinitions ]);
+  };
 
-
-  nixosModulesJson = moduleDocJson
-    (lib.flatten [ (map (x: ./.. + "/nixos-modules/${x}.nix") (builtins.attrNames inputs.self.nixosModules)) scrubbedPkgsModule dontCheckDefinitions ]);
-  darwinModulesJson = moduleDocJson
-    (lib.flatten [ (map (x: ./.. + "/darwin-modules/${x}.nix") (builtins.attrNames inputs.self.darwinModules)) scrubbedPkgsModule dontCheckDefinitions ]);
+  html = pkgs.runCommandNoCC "basement-docs-html" {} ''
+    mkdir $out
+    cp ${nixosModulesDoc.adoc} ./nixos-modules.adoc
+    cp ${darwinModulesDoc.adoc} ./darwin-modules.adoc
+    ls ${./.}
+    cp ${./.}/*.adoc .
+    ${pkgs.asciidoctor}/bin/asciidoctor -D $out *adoc
+  '';
 in
 
 {
-  inherit nixosModulesJson darwinModulesJson;
+  inherit nixosModulesDoc darwinModulesDoc html;
 
 }
