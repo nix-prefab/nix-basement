@@ -34,14 +34,14 @@ let
     url = "https://fontawesome.com/v4/assets/font-awesome-4.7.0.zip";
     sha256 = "a1z5JUXHQe4A0x+iHw5QCDZpmjZGKt2SuYW2LKowc0I=";
   };
-  antoraUI =  pkgs.fetchurl {
+  antoraUI = pkgs.fetchurl {
     url = "https://github.com/nix-basement/antora-ui/releases/download/0.2/ui-bundle.zip";
     sha256 = "1nk52rmcsb1yn41653lqfipy6dvi5ff55h9zpdqm1nbvnmx5pha5";
   };
 
   antora = (import ./_support/antora/default.nix { inherit pkgs; }).nodeDependencies;
 
-  html = pkgs.runCommandNoCC "basement-docs-html" {} ''
+  html = pkgs.runCommandNoCC "basement-docs-html" { } ''
     ln -s ${antora}/lib/node_modules ./node_modules
     export PATH="${antora}/bin:${pkgs.nodejs}/bin:$PATH"
     export CI=1
