@@ -48,6 +48,7 @@
         pkgs = loadPkgs inputs {
           inherit system;
           allowUnfree = true;
+          overlays = inputOverlays inputs;
         };
       in
       {
