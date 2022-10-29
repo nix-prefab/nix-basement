@@ -1,4 +1,4 @@
-= Nix-Basement
+= Introduction
 
 A opinioated framework of NixOS/nix-darwin modules.
 
