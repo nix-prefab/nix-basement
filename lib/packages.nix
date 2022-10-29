@@ -10,7 +10,12 @@ with builtins; with lib; {
           (attrValues inputs)
       );
 
-  loadPkgs = inputs: config:
-    import "${inputs.nixpkgs}" config;
+  loadPkgs = { config, unsafeStories, ... }: system:
+    import "${config.nixpkgs}"
+      (config.nixpkgsConfig // {
+        inherit system;
+        # TODO: Re-Implement overlays
+        # overlays = inputOverlays inputs;
+      });
 
 }

@@ -1,4 +1,4 @@
-{ lib, inputs, ... }:
+{ lib, ... }:
 with builtins; with lib; {
 
   findOverlays = flake: includeAll: defaultOverlay:
@@ -11,9 +11,9 @@ with builtins; with lib; {
         foldl' (flip extends) (_: prev) (selectedOverlays ++ [ defaultOverlay ]) final;
     };
 
-  findOverlays' = flake:
+  findOverlays' = inputs:
     let
-      path = "${flake}/overlays";
+      path = "${inputs.self}/overlays";
     in
     mapListToAttrs
       (file:

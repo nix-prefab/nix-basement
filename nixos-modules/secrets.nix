@@ -1,8 +1,8 @@
-{ config, lib, pkgs, flake, ... }:
+{ config, lib, pkgs, inputs, ... }:
 with builtins; with lib;
 let
-  sharedDir = "${flake}/secrets";
-  hostDir = "${flake}/hosts/${config.system.name}/secrets";
+  sharedDir = "${inputs.self}/secrets";
+  hostDir = "${inputs.self}/hosts/${config.system.name}/secrets";
 
   commonAssets = findAssets sharedDir;
   hostAssets = findAssets hostDir;

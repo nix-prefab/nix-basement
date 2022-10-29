@@ -1,6 +1,9 @@
-{ inputs, ... }:
-with builtins; with inputs.nixpkgs.lib; # Use nixpkgs' lib here to prevent an infinite recursion
-let
+{ lib, ... }:
+with builtins; with lib; rec {
+
+  # This file is called with nixpkgs.lib to import the rest of the library
+  # and may therefore only use functions that are avaliable in nixpkgs
+
   # Given a filename suffix and a path to a directory,
   # recursively finds all files whose names end in that suffix.
   # Returns the filenames as a list
@@ -23,15 +26,23 @@ let
         (readDir dir)
     );
 
-  lib = foldl recursiveUpdate { }
-    (
-      [
-        { inherit find; }
-        inputs.nixpkgs.lib
-      ] ++ (map
-        (file: import file { inherit inputs lib; })
-        (filter (file: file != "${inputs.self}/lib/default.nix") (find ".nix" "${inputs.self}/lib")) # Filter out this file to prevent an infinite recursion
-      )
-    );
-in
-lib
+  # Extends the nixpkgs library that is passed into here with the one in the given directory
+  loadLib =
+    base:
+    path:
+    let
+
+      # Only the custom library functions
+      standalone = foldl recursiveUpdate { }
+        (map
+          (file: import file { lib = extended; })
+          (find ".nix" path)
+        );
+
+      # The base library extended with the custom functions
+      extended = recursiveUpdate base standalone;
+
+    in
+    standalone;
+
+}

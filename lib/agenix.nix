@@ -1,8 +1,8 @@
 { lib, ... }:
 with builtins; with lib; {
-  generateSecretsNix = flake: (
+  generateSecretsNix = root: (
     let
-      keyConfig = import "${flake}/authorizedKeys.nix";
+      keyConfig = import "${root}/authorizedKeys.nix";
 
       # All keys of the users listed as maintainers (can decrypt all secrets)
       maintainerKeys = flatten (
@@ -20,7 +20,7 @@ with builtins; with lib; {
           (
             filterAttrs
               (name: config: config ? hostKey)
-              (flake.nixosConfigurations)
+              (root.nixosConfigurations)
           )
       );
 
@@ -30,7 +30,7 @@ with builtins; with lib; {
       # A list of all secrets in a given directory
       findSecrets = dir:
         map
-          (path: removePrefix "${flake}/" (toString path))
+          (path: removePrefix "${root}/" (toString path))
           (find "" dir);
 
       # Generates the agenix config for all secrets in a directory, so that they are encrypted with the given keys
@@ -43,17 +43,17 @@ with builtins; with lib; {
           )
           (findSecrets dir);
     in
-    flattenAttrs (
+    recursiveMerge (
       flatten [
         (
-          if pathExists "${flake}/secrets"
-          then generateAgeConfig (allHostKeys ++ maintainerKeys) "${flake}/secrets"
+          if pathExists "${root}/secrets"
+          then generateAgeConfig (allHostKeys ++ maintainerKeys) "${root}/secrets"
           else [ ]
         )
         (mapAttrsToList
           (name: hostKey:
-            if pathExists "${flake}/hosts/${name}/secrets"
-            then generateAgeConfig (flatten [ hostKey maintainerKeys ]) ("${flake}/hosts/${name}/secrets")
+            if pathExists "${root}/hosts/${name}/secrets"
+            then generateAgeConfig (flatten [ hostKey maintainerKeys ]) ("${root}/hosts/${name}/secrets")
             else [ ]
           )
           hostKeys

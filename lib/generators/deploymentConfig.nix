@@ -1,6 +1,6 @@
-{ lib, inputs, ... }:
+{ lib, ... }:
 with builtins; with lib; {
-  generateDeployConfig = flake: {
+  generateDeployConfig = inputs: {
     nodes =
       mapAttrs
         (name: metaConfig: {
@@ -15,7 +15,7 @@ with builtins; with lib; {
         (
           filterAttrs
             (name: metaConfig: metaConfig ? deployment) # Are the deployment settings specified
-            flake.nixosConfigurations
+            inputs.self.nixosConfigurations
         );
   };
 }

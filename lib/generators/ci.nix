@@ -1,9 +1,18 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  generateBuildJobs = flake: pkgs:
+  generateBuildJobs = args@{ config, ... }:
+    mapListToAttrs
+      (system:
+        nameValuePair
+          system
+          (generateBuildJobsFor args system)
+      )
+      config.systems;
+
+  generateBuildJobsFor = args@{ inputs, config, ... }: system:
     let
-      system = pkgs.system;
+      pkgs = loadPkgs args system;
     in
     rec {
       combined = pkgs.runCommand "build-jobs-${system}" { } ''
@@ -17,10 +26,10 @@ with builtins; with lib; {
       '';
 
 
-      jobs = flattenAttrs [
+      jobs = recursiveMerge [
 
         #nixosConfigurations
-        (if flake ? nixosConfigurations then
+        (if inputs.self ? nixosConfigurations then
           mapAttrs'
             (name: metaConfig:
               nameValuePair'
@@ -29,23 +38,23 @@ with builtins; with lib; {
             )
             (filterAttrs
               (name: metaConfig: metaConfig.system == system)
-              flake.nixosConfigurations
+              inputs.self.nixosConfigurations
             )
         else { })
 
         # packages
-        (if flake ? packages then
+        (if inputs.self ? packages then
           mapAttrs'
             (n: v: nameValuePair' "pkg-${n}" v)
-            flake.packages.${system}
+            inputs.self.packages.${system}
         else { })
 
         # devShells
-        (if flake ? devShells then
+        (if inputs.self ? devShells then
           mapAttrs'
             (n: v: nameValuePair' "shell-${n}"
               v)
-            flake.devShells.${system}
+            inputs.self.devShells.${system}
         else { })
 
       ];

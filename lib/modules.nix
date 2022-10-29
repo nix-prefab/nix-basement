@@ -1,16 +1,16 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  findNixosModules = flake:
-    if pathExists "${flake}/nixos-modules" then
-      findModules flake "${flake}/nixos-modules"
+  findNixosModules = root:
+    if pathExists "${root}/nixos-modules" then
+      findModules "${root}/nixos-modules"
     else
-      findModules flake "${flake}/modules";
+      findModules "${root}/modules";
 
-  findDarwinModules = flake:
-    findModules flake "${flake}/darwin-modules";
+  findDarwinModules = root:
+    findModules "${root}/darwin-modules";
 
-  findModules = flake: modulesPath:
+  findModules = modulesPath:
     mapListToAttrs
       (file:
         nameValuePair'

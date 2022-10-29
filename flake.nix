@@ -11,7 +11,6 @@
       url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    flake-utils.url = "github:numtide/flake-utils";
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -19,101 +18,85 @@
     deploy-rs = {
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.utils.follows = "flake-utils";
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+  outputs = inputs:
     let
-      lib = import ./lib { inherit inputs; };
+      baseLib = ((import ./lib { lib = inputs.nixpkgs.lib; }).loadLib inputs.nixpkgs.lib ./lib);
     in
-    with builtins; with lib; {
-      # system independent outputs
-      inherit lib;
+    baseLib.generateFlakeOutputs ./. inputs (lib: with builtins; with lib; {
 
-      nixosModules = findNixosModules self;
-      darwinModules = findDarwinModules self;
+      story = {
 
-      overlays = findOverlays self true
-        (final: prev: {
-          inherit lib; # overwrite pkgs.lib with our extended lib
-          agenix = inputs.agenix.packages.${prev.system}.agenix;
-          base = self.packages.${prev.system}; # Add our packages to the base scope
-        });
+        generators = args@{ config, inputs, outputs, root, stories, unsafeStories, ... }:
+          (recursiveMerge [
+            {
 
-    } // (flake-utils.lib.eachDefaultSystem (system:
-      let
-        # import nixpkgs for the current system and set options
-        pkgs = loadPkgs inputs {
-          inherit system;
-          allowUnfree = true;
-          overlays = inputOverlays inputs;
-        };
-      in
-      {
-        # system-specific outputs
+              devShells = generateDevShells args;
 
-        packages = listToAttrs
-          (
-            map
-              (file: rec {
-                name = unsafeDiscardStringContext (replaceStrings [ "/" ] [ "-" ] (removePrefix "${self}/scripts/" file)); # this is safe, actually
-                value = pkgs.substituteAll {
-                  inherit name;
-                  src = file;
-                  dir = "bin";
-                  isExecutable = true;
+              buildJobs = generateBuildJobs args;
 
-                  # packages that are available to the scripts
-                  inherit (pkgs)
-                    bash
-                    gnused
-                    jq
-                    nix
-                    python3
-                    rage
-                    ;
+              checks = generateChecks args;
 
-                  wireguard = pkgs.wireguard-tools;
-                  nixpkgs = toString inputs.nixpkgs;
-                  nixfmt = pkgs.nixfmt-rfc-style;
-                };
-              })
-              (find "" "${self}/scripts")
-          );
+            }
 
-        apps = mapAttrs
-          (name: value:
-            (flake-utils.lib.mkApp {
-              inherit name;
-              drv = value;
+            (optionalAttrs (pathExists "${root}/lib") {
+              story.lib = inputs.self.lib;
+              lib = baseLib.loadLib lib "${root}/lib";
             })
-          )
-          inputs.self.packages.${system};
 
-        devShells.default =
-          pkgs.mkShell {
-            buildInputs = with pkgs;
-              flatten [
-                agenix
-                nixpkgs.legacyPackages.${system}.deploy-rs
-                nixpkgs-fmt
-                rage
+            (optionalAttrs (pathExists "${root}/nixos-modules" || pathExists "${root}/modules") {
+              story.nixosModules = (attrValues inputs.self.nixosModules) ++ inputs.self.story.extraNixosModules;
+              story.extraNixosModules = [ ];
+              nixosModules = findNixosModules root;
+            })
 
-                (attrValues self.packages.${system})
-              ];
-          };
+            (optionalAttrs (pathExists "${root}/darwin-modules") {
+              story.darwinModules = (attrValues inputs.self.darwinModules) ++ inputs.self.story.extraDarwinModules;
+              story.extraDarwinModules = [ ];
+              darwinModules = findDarwinModules root;
+            })
 
-        checks = {
-          nixpkgs-fmt = pkgs.runCommand "check-nix-format" { } ''
-            ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${./.}
-            mkdir $out #sucess
-          '';
-        };
+            (optionalAttrs (pathExists "${root}/hosts") {
+              nixosConfigurations = generateNixosConfigurations args;
+              darwinConfigurations = generateDarwinConfigurations args;
+            })
 
-        buildJobs = generateBuildJobs self pkgs;
-        docs = (import ./docs { inherit pkgs lib inputs; });
+            (optionalAttrs (pathExists "${root}/scripts") (
+              let
+                a = b;
+              in
+              { }
+            ))
 
-      }
-    ));
+            (optionalAttrs (pathExists "${root}/docs") {
+              docs = mapListToAttrs
+                (system:
+                  nameValuePair
+                    system
+                    (import ./docs { inherit lib inputs; pkgs = loadPkgs args system; })
+                )
+                config.systems;
+            })
+
+          ]);
+
+        extraNixosModules = [
+          inputs.agenix.nixosModules.age
+        ];
+
+        shellPackages = pkgs: with pkgs; [
+          nixpkgs-fmt
+        ];
+
+        checks = { pkgs, root, config, ... }: flatten [
+          (optional config.checkFormatting (pkgs.runCommand "nixpkgs-fmt-check" { } ''
+            ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${root} && mkdir $out
+          ''))
+        ];
+
+      };
+
+    });
 }

@@ -72,9 +72,7 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "utils": [
-          "flake-utils"
-        ]
+        "utils": "utils"
       },
       "locked": {
         "lastModified": 1715699772,
@@ -182,7 +180,6 @@
         "agenix": "agenix",
         "darwin": "darwin_2",
         "deploy-rs": "deploy-rs",
-        "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",
         "nmd": "nmd"
       }
