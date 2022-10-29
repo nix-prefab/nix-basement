@@ -10,6 +10,7 @@ asciidoc:
 content:
   sources:
     - url: ./docsrc
+      edit_url: 'https://github.com/nix-basement/nix-basement/tree/main/docs/{path}'
 ui:
   bundle:
     url: ./uibundle.zip

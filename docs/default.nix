@@ -44,6 +44,7 @@ let
   html = pkgs.runCommandNoCC "basement-docs-html" {} ''
     ln -s ${antora}/lib/node_modules ./node_modules
     export PATH="${antora}/bin:${pkgs.nodejs}/bin:$PATH"
+    export CI=1
     export docsdir=./docsrc
     #mkdir -p $out/css $out/fonts
     mkdir -p $out

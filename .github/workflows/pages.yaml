@@ -22,7 +22,7 @@ jobs:
         run: |
           export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
           echo "::set-output name=system::$SYSTEM"
-          nix build ".#docs.${SYSTEM}.manual.html" -vL
+          nix build ".#docs.${SYSTEM}.html" -vL
           cp -r result/share/doc/nix-basement ./_docs
       - name: Publish 🗞
         uses: netlify/actions/cli@master
