@@ -55,14 +55,14 @@ def renderLiteralStuff(obj):
     return obj
 
 
-print(f"""= {name} Options
-:toc: left
-:toclevels: 8
+print(f"""= {name}
 :sectlinks:
+
+== Option List
 """)
 for optionName, optionData in data.items():
-  nestLevel = len(optionName.split('.'))
-  #print(nestLevel, optionName, '->',  if 'description' in optionData else "")
+  #nestLevel = len(optionName.split('.'))
+  nestLevel = 2
   print(f"""[,{optionName}]
 {"=" * (nestLevel +1)} {optionName}
 """)

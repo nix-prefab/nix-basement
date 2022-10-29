@@ -17,14 +17,14 @@ let
 
   nixosModulesDoc = moduleDocJson {
     moduleRootPaths = [ ./.. ];
-    title = "Nix-Basement NixOS Modules";
+    title = "NixOS Options List";
     baseUrl = "https://github.com/nix-basement/nix-basement/blob/main/";
     modules =
       (lib.flatten [ (map (x: ./.. + "/nixos-modules/${x}.nix") (builtins.attrNames inputs.self.nixosModules)) scrubbedPkgsModule dontCheckDefinitions ]);
   };
   darwinModulesDoc = moduleDocJson {
     moduleRootPaths = [ ./.. ];
-    title = "Nix-Basement nix-darwin Modules";
+    title = "nix-darwin Options List";
     baseUrl = "https://github.com/nix-basement/nix-basement/blob/main/";
     modules =
       (lib.flatten [ (map (x: ./.. + "/darwin-modules/${x}.nix") (builtins.attrNames inputs.self.darwinModules)) scrubbedPkgsModule dontCheckDefinitions ]);
@@ -35,8 +35,8 @@ let
     sha256 = "a1z5JUXHQe4A0x+iHw5QCDZpmjZGKt2SuYW2LKowc0I=";
   };
   antoraUI =  pkgs.fetchurl {
-    url = "https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/4bf07acb44a957e1830412420d3e65d25ee46f7f/raw/build/ui-bundle.zip?job=bundle-stable";
-    sha256 = "17884q1wsv3wf38cwxms0j1c1v4vwl4c8arp4qcvpmf0xjw5gffc";
+    url = "https://github.com/nix-basement/antora-ui/releases/download/0.2/ui-bundle.zip";
+    sha256 = "1nk52rmcsb1yn41653lqfipy6dvi5ff55h9zpdqm1nbvnmx5pha5";
   };
 
   antora = (import ./_support/antora/default.nix { inherit pkgs; }).nodeDependencies;
