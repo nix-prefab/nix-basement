@@ -27,6 +27,9 @@ with builtins; with lib; {
             # Add the modules from all inputs
             (inputDarwinModules inputs)
 
+            # Add nixpkgs overlays from all inputs
+            (mkOverlaysModule inputs)
+
             # the system configuration
             metaConfig.modules
           ];
@@ -60,6 +63,9 @@ with builtins; with lib; {
             # Add the modules from all inputs
             (inputNixOSModules inputs)
 
+            # Add nixpkgs overlays from all inputs
+            (mkOverlaysModule inputs)
+
             # the system configuration
             metaConfig.modules
           ];
@@ -70,6 +76,11 @@ with builtins; with lib; {
   mkHostNameModule = name:
     { config, ... }: {
       networking.hostName = mkDefault name;
+    };
+
+  mkOverlaysModule = inputs:
+    { ... }: {
+      nixpkgs.overlays = inputOverlays inputs;
     };
 
   inputDarwinModules = inputs:
