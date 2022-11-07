@@ -149,7 +149,7 @@ with builtins; with lib; {
                             #!/bin/sh
                             if [ ! -f /etc/basement-mounted ]; then
                               if [ -n "''$tftp" ]; then
-                                touch /etc/basement-mounted
+                                echo "TFTP=$tftp" > /etc/basement-mounted
                                 mount -t nfs4 -o ro,async $tftp:/nixstore /mnt-root/nix/.ro-store
                                 mount -t nfs4 -o ro $tftp:/config /mnt-root/config
                                 ${optionalString cfg.persistentStorage ''
