@@ -11,9 +11,6 @@ with builtins; with lib; {
       );
 
   loadPkgs = inputs: config:
-    import "${inputs.nixpkgs}"
-      (config // {
-        overlays = inputOverlays inputs;
-      });
+    import "${inputs.nixpkgs}" config;
 
 }
