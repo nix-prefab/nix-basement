@@ -27,10 +27,10 @@ with builtins; with lib; {
     in
     {
       options = recursiveUpdate
-        evaluated.options
+        (if evaluated ? options then evaluated.options else { })
         (setAttrByPath optionPath (mkEnableOption description));
 
-      config = mkIf (getAttrFromPath optionPath config) evaluated.config;
+      config = mkIf (getAttrFromPath optionPath config) (if evaluated ? config then evaluated.config else evaluated);
     }
   );
 
