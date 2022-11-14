@@ -146,20 +146,20 @@ with builtins; with lib; {
         boot.initrd.network.postCommands =
           let
             script = pkgs.writeScript "mount-dhcp" ''
-                            #!/bin/sh
-                            if [ ! -f /etc/basement-mounted ]; then
-                              if [ -n "''$tftp" ]; then
-                                echo "TFTP=$tftp" > /etc/basement-mounted
-                                mount -t nfs4 -o ro,async $tftp:/nixstore /mnt-root/nix/.ro-store
-                                mount -t nfs4 -o ro $tftp:/config /mnt-root/config
-                                ${optionalString cfg.persistentStorage ''
-                                mount -t nfs4 -o rw,async $tftp:/storage/${config.networking.hostName} /mnt-root/persistent
-                                mkdir -p /mnt-root/persistent/ssh || true
-                                mkdir -p /mnt-root/etc/ssh
-                                mount --bind /mnt-root/persistent/ssh /mnt-root/etc/ssh
-              ''}
-                              fi
-                            fi
+              #!/bin/sh
+              if [ ! -f /etc/basement-mounted ]; then
+                if [ -n "''$tftp" ]; then
+                  echo "TFTP=$tftp" > /etc/basement-mounted
+                  mount -t nfs4 -o ro,async $tftp:/nixstore /mnt-root/nix/.ro-store
+                  mount -t nfs4 -o ro $tftp:/config /mnt-root/config
+                  ${optionalString cfg.persistentStorage ''
+                    mount -t nfs4 -o rw,async $tftp:/storage/${config.networking.hostName} /mnt-root/persistent
+                    mkdir -p /mnt-root/persistent/ssh || true
+                    mkdir -p /mnt-root/etc/ssh
+                    mount --bind /mnt-root/persistent/ssh /mnt-root/etc/ssh
+                  ''}
+               fi
+              fi
             '';
           in
           ''
