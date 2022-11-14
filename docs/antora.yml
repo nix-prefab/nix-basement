@@ -1,0 +1,6 @@
+name: nixbasement
+start_page: index.adoc
+title: Nix-Basement Documentation
+version: '0.1'
+nav:
+  - modules/ROOT/nav.adoc

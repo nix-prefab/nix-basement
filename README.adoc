@@ -10,7 +10,7 @@ image::https://forthebadge.com/images/badges/gluten-free.svg[Gluten Free]
 == Documentation
 The full Documentation of all modules is located here:
 
-https://melodious-florentine-5ff546.netlify.app[Documentation]
+https://nix-prefab.org[Documentation]
 
 [what-is]
 == What is nix-basement?
