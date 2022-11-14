@@ -3,6 +3,8 @@ name: Deploy Documentation to netlify
 on:
   push:
     branches: [ main ]
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 concurrency:
@@ -23,8 +25,9 @@ jobs:
           export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
           echo "::set-output name=system::$SYSTEM"
           nix build ".#docs.${SYSTEM}.html" -vL
-          cp -r result/share/doc/nix-basement ./_docs
+          cp -r result/. ./_docs
       - name: Publish 🗞
+        if: ${{ github.event_name != 'pull_request' }}
         uses: netlify/actions/cli@master
         with:
           args: deploy --prod --dir=_docs

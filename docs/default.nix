@@ -58,6 +58,8 @@ let
     cd $docsdir
     cp ${./.}/antora.yml .
     ${pkgs.git}/bin/git init
+    ${pkgs.git}/bin/git config user.name "Docs Builder"
+    ${pkgs.git}/bin/git config user.email "nixprefabdocs@example.org"
     ${pkgs.git}/bin/git add .
     ${pkgs.git}/bin/git commit -ma
     cd ..
