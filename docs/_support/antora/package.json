@@ -1,0 +1,16 @@
+{
+  "name": "antora",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@antora/cli": "^3.1.2",
+    "@antora/lunr-extension": "^1.0.0-alpha.8",
+    "@antora/site-generator": "^3.1.2"
+  }
+}
