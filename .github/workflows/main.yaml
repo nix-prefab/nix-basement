@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install nix ❄️
-        uses: cachix/install-nix-action@v16
+        uses: cachix/install-nix-action@v18
 
       - name: Run checks ✅
         run: nix flake check
@@ -38,15 +38,15 @@ jobs:
           fetch-depth: 0
 
       - name: Install nix ❄️
-        uses: cachix/install-nix-action@v16
+        uses: cachix/install-nix-action@v18
 
       - name: Build 🛠️
         id: build
         run: |
           export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
-          echo "::set-output name=system::$SYSTEM"
+          echo "system=$SYSTEM" >>$GITHUB_OUTPUT
           nix build ".#buildJobs.${SYSTEM}.combined" -vL
-          echo "::set-output name=result::$(readlink result)"
+          echo "result=$(readlink result)" >>$GITHUB_OUTPUT
 
       - name: Upload result
         uses: actions/upload-artifact@v3
