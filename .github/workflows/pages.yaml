@@ -1,4 +1,4 @@
-name: Deploy Documentation to netlify
+name: Build Documentation
 
 on:
   pull_request:

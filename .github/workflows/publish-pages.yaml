@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "main"
-      - "docs-build-fix"
   workflow_dispatch: {}
 
 concurrency:
@@ -14,7 +13,7 @@ concurrency:
 jobs:
   build:
     name: Build 🛠️
-    uses: nix-prefab/nix-basement/.github/workflows/pages.yaml@docs-build-fix
+    uses: nix-prefab/nix-basement/.github/workflows/pages.yaml@main
   deploy:
     name: Deploy 🚀
     needs:
