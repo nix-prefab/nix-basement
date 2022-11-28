@@ -1,4 +1,4 @@
-= Nix-Basement
+= Nix-Prefab
 
 A opinioated framework of NixOS/nix-darwin modules.
 
@@ -17,7 +17,7 @@ Example flake:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
     base = {
-      url = "github:nix-basement/nix-basement";
+      url = "github:nix-prefab/nix-basement";
       inputs = {
         agenix.follows = "agenix";
         darwin.follows = "darwin";
