@@ -1,3 +1,7 @@
+= Nix-Basement
+
+A opinioated framework of NixOS/nix-darwin modules.
+
 [[ch-usage]]
 == Using nix-basement
 

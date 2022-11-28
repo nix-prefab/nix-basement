@@ -1,0 +1,121 @@
+= Introduction
+
+A opinioated framework of NixOS/nix-darwin modules.
+
+[[ch-usage]]
+== Using nix-basement
+
+nix-basement is meant to be used as an input to a nix-flake.
+
+Example flake:
+
+[source,nix]
+----
+{
+  description = "A very basic flake";
+
+  inputs = {
+    base.url = "github:nix-basement/nix-basement/main";
+  };
+
+  outputs = directInputs:
+    let
+      inputs = directInputs.base.inputs // directInputs;
+      inherit (inputs)
+        base
+        flake-utils
+        nixpkgs
+        darwin
+        self
+        ;
+      lib = base.lib;
+    in
+    with builtins; with lib; (
+      base.outputs
+      //
+      {
+
+        nixosConfigurations = generateNixosConfigurations inputs;
+        darwinConfigurations = generateDarwinConfigurations inputs;
+
+        deploy = generateDeployConfig self;
+        devShells = base.devShells;
+
+      }
+      //
+      (flake-utils.lib.eachDefaultSystem (system: {
+
+        buildJobs = generateBuildJobs self system;
+
+      }))
+    );
+}
+----
+
+[[sec-usage-nixos]]
+=== NixOS Configuration
+
+nix-basement (and it's `generateNixosConfiguration` function) searches for a `hosts/{hostname}/default.nix` looking like this:
+
+[source,nix]
+----
+{ ... }: {
+  system = "x86_64-linux"; # or "aarch64-linux", ...
+  modules = [
+    # NixOS modules of this configuration, for example `[ ./configuration.nix ]` with your system specific configuraition
+  ];
+
+  # and optionally deployment configuration (deploy.rs)
+  deployment = {
+    targetUser = "root"; # root or a user that can sudo passwordless
+    targetHost = "192.168.1.1"; # ip or hostname of the server
+    substituteOnDestination = true; # if true the server tries to download needed store paths from caches
+  };
+
+}
+----
+
+[NOTE]
+the `deployment` block is entirely optional and can be omitted
+
+[[sec-usage-nix-darwin]]
+=== nix-darwin Configuration
+
+Similar to NixOS, nix-basement (and it's `generateDarwinConfiguration` function) searches for a `darwin-hosts/{hostname}/default.nix` looking like this:
+
+[source,nix]
+----
+{ ... }: {
+  system = "x86_64-darwin"; # or "aarch64-darwin"
+  modules = [
+    # nix-darwin modules of this configuration, for example `[ ./configuration.nix ]` with your system specific configuraition
+  ];
+
+}
+----
+
+[[sec-usage-nixos-vm]]
+==== NixOS VM on nix-darwin
+
+The darwin option `basement.virtualization.linuxvm` provides an easy way to host a linux VM on your mac.
+
+TIP: This is a useful way to get a *fast* aarch64 NixOS machine.
+
+To enable it, put the following inside your `configuration.nix`
+
+[source,nix]
+----
+basement.virtualization.linuxvm = {
+  enable = true;
+  configuration = inputs.self.nixosConfigurations.linuxvm; # <1>
+};
+----
+
+<1> This needs to be a `nixpkgs.lib.nixosConfiguration` attrset. The `nixosConfiguration` SHOULD have `nix-basement.presets.darwinvm.enable = true`.
+
+By default the VMs port 22 is forwarded to the hosts port 5555. So you can reach the VM from the hosts network via SSH.
+The VM has a rw nix-store saved into a QCOW2 at `${cfg.dataDir}/nix-store.qcow2` (so `/var/lib/linuxvm/nix-store.qcow2` by default`).
+
+An 9p mount will be created to share data between the host and vm.
+It mounts the hostpath `${cfg.sharePath}` ( `/Users/user/vmshare` by default ) to `/share` on the VM.
+As the VM is immutable, the contents of `/share/ssh/` will automatically be copied to `/etc/ssh/` on boot. Please store your SSH hostKeys there.

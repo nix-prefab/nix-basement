@@ -1,33 +1,28 @@
-name: Deploy Documentation to netlify
+name: Build Documentation
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
-  workflow_dispatch:
-
-concurrency:
-  group: "netlify"
-  cancel-in-progress: true
+  workflow_call: {}
 
 jobs:
-  build:
+  docs:
+    name: Docs 📄
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout 🛎️
+      - name: Checkout
         uses: actions/checkout@v3
       - name: Install nix ❄️
-        uses: cachix/install-nix-action@v16
+        uses: cachix/install-nix-action@v18
       - name: Build 🛠️
         id: build
         run: |
           export SYSTEM=$(nix eval --impure --raw --expr "builtins.currentSystem")
-          echo "::set-output name=system::$SYSTEM"
-          nix build ".#docs.${SYSTEM}.manual.html" -vL
-          cp -r result/share/doc/nix-basement ./_docs
-      - name: Publish 🗞
-        uses: netlify/actions/cli@master
+          echo "system=$SYSTEM" >>$GITHUB_OUTPUT
+          nix build ".#docs.${SYSTEM}.html" -vL
+          cp -r result/. ./_docs
+      - name: Upload docs 📤
+        uses: actions/upload-artifact@v3
         with:
-          args: deploy --prod --dir=_docs
-        env:
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          name: docs-${{ steps.build.outputs.system }}
+          path: ./_docs

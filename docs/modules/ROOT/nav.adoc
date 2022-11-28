@@ -1,0 +1,6 @@
+[]
+* xref:index.adoc[]
+[]
+* xref:nixos-modules.adoc[]
+[]
+* xref:darwin-modules.adoc[]
