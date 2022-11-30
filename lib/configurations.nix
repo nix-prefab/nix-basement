@@ -48,7 +48,7 @@ with builtins; with lib; {
           inherit (metaConfig) system;
           pkgs = loadPkgs inputs { inherit (metaConfig) system; };
           specialArgs = {
-            inherit inputs flake;
+            inherit inputs flake metaConfig;
             lib =
               if flake ? lib
               then recursiveUpdate lib flake.lib
