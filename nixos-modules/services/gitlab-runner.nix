@@ -3,6 +3,11 @@ with builtins; with lib; {
 
   options.basement.services.gitlab-runner = with types; {
     enable = mkEnableOption "GitLab runner";
+    namePrefix = mkOption {
+      description = "Prefix for the runner name";
+      type = str;
+      default = "";
+    };
     concurrentJobs = mkOption {
       description = "Maximum number of jobs to run concurrently";
       type = int;
@@ -11,10 +16,10 @@ with builtins; with lib; {
       description = "Tags to add to all runners";
       type = listOf str;
     };
-    namePrefix = mkOption {
-      description = "Prefix for the runner name";
-      type = str;
-      default = "";
+    commonFlags = mkOption {
+      description = "Flags to add to all runners";
+      type = listOf str;
+      default = [ ];
     };
     configs = mkOption {
       description = "GitLab Runner regsitration configurations";
@@ -76,7 +81,7 @@ with builtins; with lib; {
                     registrationConfigFile = values.registrationConfigFile;
                     registrationFlags = [
                       "--name ${cfg.namePrefix}${config.system.name}"
-                    ];
+                    ] ++ cfg.commonFlags;
                     tagList = [ (mkIf values.forwardDockerSocket "docker") system ] ++ values.tags ++ cfg.commonTags;
                     runUntagged = true;
                     executor = "docker";
@@ -92,7 +97,7 @@ with builtins; with lib; {
                     registrationConfigFile = values.registrationConfigFile;
                     registrationFlags = [
                       "--name ${cfg.namePrefix}${config.system.name}-nix"
-                    ];
+                    ] ++ cfg.commonFlags;
                     tagList = [ "nix" ];
                     runUntagged = false;
                     executor = "docker";
