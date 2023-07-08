@@ -2,7 +2,7 @@
   description = "TODO: add description";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     nmd = {
       url = "github:nix-basement/nmd";
       flake = false;
