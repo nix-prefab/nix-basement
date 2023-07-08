@@ -15,7 +15,7 @@ Example flake:
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
     base = {
       url = "github:nix-prefab/nix-basement";
       inputs = {
