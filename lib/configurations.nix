@@ -25,7 +25,10 @@ with builtins; with lib; {
             (mkHostNameModule name)
 
             # Add the modules from all inputs
-            (inputDarwinModules inputs)
+            # Disabled these, because they are broken. Working versions will return with nix-stories
+            # (inputDarwinModules inputs)
+            (attrValues (inputs.base.darwinModules or { }))
+            (attrValues (inputs.self.darwinModules or { }))
 
             # Add nixpkgs overlays from all inputs
             (mkOverlaysModule inputs)
@@ -60,7 +63,11 @@ with builtins; with lib; {
             (mkHostNameModule name)
 
             # Add the modules from all inputs
-            (inputNixOSModules inputs)
+            # Disabled these, because they are broken. Working versions will return with nix-stories
+            # (inputNixOSModules inputs)
+            inputs.agenix.nixosModules.age
+            (attrValues (inputs.base.nixosModules or { }))
+            (attrValues (inputs.self.nixosModules or { }))
 
             # Add nixpkgs overlays from all inputs
             (mkOverlaysModule inputs)
