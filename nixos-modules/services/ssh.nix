@@ -35,8 +35,10 @@ with builtins; with lib; {
 
       services.openssh = {
         enable = true;
-        passwordAuthentication = false;
-        kbdInteractiveAuthentication = false;
+        settings = {
+          PasswordAuthentication = false;
+          KbdInteractiveAuthentication = false;
+        };
         extraConfig = ''
           AllowTcpForwarding yes
           X11Forwarding yes
