@@ -31,11 +31,16 @@ in
       description = "Path where weblate stores its data";
       default = "/var/lib/weblate";
     };
+    internalDb = mkOption {
+      type = bool;
+      description = "Create a postgres container for weblate";
+      default = false;
+    };
     backup = {
       enable = mkOption {
         type = bool;
         description = "Enable automatic backups";
-        default = true;
+        default = config.basement.services.weblate.internalDb;
       };
       target = mkOption {
         type = str;
@@ -57,79 +62,82 @@ in
       backend = config.virtualisation.oci-containers.backend;
       cmd = "${config.virtualisation.${backend}.package}/bin/${backend}";
     in
-    mkIf cfg.enable {
+    mkIf cfg.enable (mkMerge [
+      {
 
-      systemd.services."create-dockernet-${serviceName}" = {
-        script = ''
-          if ! ${cmd} network ls | ${pkgs.gawk}/bin/awk '{print $2;}' | grep -q ${serviceName}; then
-            ${cmd} network create ${serviceName}
-          fi
-        '';
-        wantedBy = [ "multi-user.target" ];
-        after = lib.optionals (backend == "docker") [ "docker.service" "docker.socket" ];
-        serviceConfig.Type = "oneshot";
-      };
+        systemd.services."create-dockernet-${serviceName}" = {
+          script = ''
+            if ! ${cmd} network ls | ${pkgs.gawk}/bin/awk '{print $2;}' | grep -q ${serviceName}; then
+              ${cmd} network create ${serviceName}
+            fi
+          '';
+          wantedBy = [ "multi-user.target" ];
+          after = lib.optionals (backend == "docker") [ "docker.service" "docker.socket" ];
+          serviceConfig.Type = "oneshot";
+        };
 
-      virtualisation.oci-containers.containers = {
+        virtualisation.oci-containers.containers = {
 
-        "${serviceName}-web" = {
-          image = "weblate/weblate:latest";
-          extraOptions = [ "--network=${serviceName}" "--tmpfs=/app/cache" ];
-          environmentFiles = [ cfg.envFile ];
-          dependsOn = [ "${serviceName}-redis" "${serviceName}-db" ];
-          environment = {
-            WEBLATE_SITE_DOMAIN = cfg.domain;
-            POSTGRES_HOST = "${serviceName}-db";
-            REDIS_HOST = "${serviceName}-redis";
+          "${serviceName}-web" = {
+            image = "weblate/weblate:latest";
+            extraOptions = [ "--network=${serviceName}" "--tmpfs=/app/cache" ] ++ (optional (!cfg.internalDb) "--add-host=host.docker.internal:host-gateway");
+            environmentFiles = [ cfg.envFile ];
+            dependsOn = [ "${serviceName}-redis" ] ++ (optional (!cfg.internalDb) "${serviceName}-db");
+            environment = {
+              WEBLATE_SITE_DOMAIN = cfg.domain;
+              POSTGRES_HOST = mkIf cfg.internalDb "${serviceName}-db";
+              REDIS_HOST = "${serviceName}-redis";
+            };
+            ports = [ "${cfg.address}:${toString cfg.port}:8080" ];
+            volumes = [
+              "${cfg.path}/data:/app/data"
+            ];
           };
-          ports = [ "${cfg.address}:${toString cfg.port}:8080" ];
-          volumes = [
-            "${cfg.path}/data:/app/data"
-          ];
+
+          "${serviceName}-redis" = {
+            extraOptions = [ "--network=${serviceName}" ];
+            image = "library/redis:6-alpine";
+            cmd = [ "redis-server" "--appendonly" "yes" ];
+            volumes = [
+              "${cfg.path}/redis:/data"
+            ];
+          };
+
+          "${serviceName}-db" = mkIf cfg.internalDb {
+            extraOptions = [ "--network=${serviceName}" ];
+            environmentFiles = [ cfg.envFile ];
+            image = "library/postgres:13-alpine";
+            volumes = [
+              "${cfg.path}/db:/var/lib/postgresql/data"
+            ];
+          };
+
         };
 
-        "${serviceName}-redis" = {
-          extraOptions = [ "--network=${serviceName}" ];
-          image = "library/redis:6-alpine";
-          cmd = [ "redis-server" "--appendonly" "yes" ];
-          volumes = [
-            "${cfg.path}/redis:/data"
-          ];
+        systemd.tmpfiles.rules = [
+          "d ${cfg.path}/data 1700 1000 1000"
+          "d ${cfg.path}/redis 1700 999 1000"
+          "d ${cfg.path}/db 1700 70 70"
+        ];
+
+        services.nginx.virtualHosts."${cfg.domain}" = mkIf config.services.nginx.enable {
+          forceSSL = true;
+          enableACME = true;
+          locations."/".proxyPass = "http://${if cfg.address != "0.0.0.0" then cfg.address else "127.0.0.1"}:${toString cfg.port}";
         };
 
-        "${serviceName}-db" = {
-          extraOptions = [ "--network=${serviceName}" ];
-          environmentFiles = [ cfg.envFile ];
-          image = "library/postgres:13-alpine";
-          volumes = [
-            "${cfg.path}/db:/var/lib/postgresql/data"
-          ];
+      }
+      (mkIf cfg.backup.enable {
+        basement.healthchecks.services = [ "backup-${serviceName}-db" ];
+        systemd.services."backup-${serviceName}-db" = {
+          script = ''
+            ${cmd} exec -i ${serviceName}-db /bin/bash 'PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U $POSTGRES_USER $POSTGRES_DATABASE' > ${cfg.backup.target}/${serviceName}-db.sql
+          '';
+          after = [ "${backend}-${serviceName}-db.service" ];
+          serviceConfig.Type = "oneshot";
+          startAt = cfg.backup.startAt;
         };
-
-      };
-
-      systemd.tmpfiles.rules = [
-        "d ${cfg.path}/data 1700 1000 1000"
-        "d ${cfg.path}/redis 1700 999 1000"
-        "d ${cfg.path}/db 1700 70 70"
-      ];
-
-      services.nginx.virtualHosts."${cfg.domain}" = mkIf config.services.nginx.enable {
-        forceSSL = true;
-        enableACME = true;
-        locations."/".proxyPass = "http://${if cfg.address != "0.0.0.0" then cfg.address else "127.0.0.1"}:${toString cfg.port}";
-      };
-
-      basement.healthchecks.services = [ "backup-${serviceName}-db" ];
-      systemd.services."backup-${serviceName}-db" = {
-        script = ''
-          ${cmd} exec -i ${serviceName}-db /bin/bash 'PGPASSWORD=$POSTGRES_PASSWORD pg_dump -U $POSTGRES_USER $POSTGRES_DATABASE' > ${cfg.backup.target}/${serviceName}-db.sql
-        '';
-        after = [ "${backend}-${serviceName}-db.service" ];
-        serviceConfig.Type = "oneshot";
-        startAt = cfg.backup.startAt;
-      };
-
-    };
+      })
+    ]);
 
 }
