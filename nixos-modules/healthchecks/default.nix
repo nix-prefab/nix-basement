@@ -57,7 +57,7 @@ with builtins; with lib; {
           mapListToAttrs
             (service:
               nameValuePair
-                "${service}-failure-healthcheck.service"
+                "${service}-failure-healthcheck"
                 {
                   enable = true;
                   script = generateUpdateScript service false;
