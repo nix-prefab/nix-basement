@@ -31,7 +31,7 @@ with builtins; with lib; {
           };
           tags = mkOption {
             description = "GitLab Runner tags";
-            type = listOf string;
+            type = listOf str;
             default = [ ];
           };
           addNixRunner = mkOption {

@@ -7,7 +7,7 @@ with builtins; with lib; {
 
     services = mkOption {
       description = "Healthchecks.io IDs or ping URLs";
-      type = attrsOf string;
+      type = attrsOf str;
       default = { };
       # TODO: Example
     };
