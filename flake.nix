@@ -16,11 +16,6 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    deploy-rs = {
-      url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.utils.follows = "flake-utils";
-    };
   };
 
   outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
@@ -39,7 +34,6 @@
           inherit lib; # overwrite pkgs.lib with our extended lib
           agenix = inputs.agenix.packages.${prev.system}.agenix;
           base = self.packages.${prev.system}; # Add our packages to the base scope
-          deploy-rs = inputs.deploy-rs.packages.${prev.system};
         });
 
     } // (flake-utils.lib.eachDefaultSystem (system:
@@ -97,7 +91,7 @@
             buildInputs = with pkgs;
               flatten [
                 agenix
-                deploy-rs.deploy-rs
+                nixpkgs.legacyPackages.${system}.deploy-rs
                 nixpkgs-fmt
                 rage
 
