@@ -24,7 +24,7 @@ def fetchKeys(user: str, url: str) -> []:
 filename = "authorizedKeys.nix"
 
 data = json.loads(
-  subprocess.check_output(["@nixFlakes@/bin/nix", "eval", "--json", "-f", filename])
+  subprocess.check_output(["@nix@/bin/nix", "eval", "--json", "-f", filename])
 )
 
 data["keys"] = {
@@ -34,7 +34,7 @@ data["keys"] = {
 nix = subprocess.check_output(
   ["@nixfmt@/bin/nixfmt"],
   input = subprocess.check_output(
-    ["@nixFlakes@/bin/nix", "eval", "--impure", "--expr", "builtins.fromJSON (builtins.readFile \"/dev/stdin\")"],
+    ["@nix@/bin/nix", "eval", "--impure", "--expr", "builtins.fromJSON (builtins.readFile \"/dev/stdin\")"],
     input=json.dumps(data).encode("UTF-8")
   )
 ).decode("UTF-8")

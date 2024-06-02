@@ -70,7 +70,7 @@
                     bash
                     gnused
                     jq
-                    nixFlakes
+                    nix
                     nixfmt
                     python3
                     rage

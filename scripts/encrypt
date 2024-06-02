@@ -14,7 +14,7 @@ for input in "$@"; do
     fi
 done
 
-nixInstantiate=@nixFlakes@/bin/nix-instantiate
+nixInstantiate=@nix@/bin/nix-instantiate
 sedBin=@gnused@/bin/sed
 ageBin=@rage@/bin/rage
 
