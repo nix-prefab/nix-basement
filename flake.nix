@@ -2,7 +2,7 @@
   description = "TODO: add description";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-22.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     nmd = {
       url = "github:nix-basement/nmd";
       flake = false;
@@ -71,13 +71,13 @@
                     gnused
                     jq
                     nix
-                    nixfmt
                     python3
                     rage
                     ;
 
                   wireguard = pkgs.wireguard-tools;
                   nixpkgs = toString inputs.nixpkgs;
+                  nixfmt = pkgs.nixfmt-rfc-style;
                 };
               })
               (find "" "${self}/scripts")
