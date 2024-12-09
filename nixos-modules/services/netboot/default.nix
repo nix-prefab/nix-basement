@@ -29,6 +29,11 @@ with builtins; with lib; {
             type = bool;
             default = false;
           };
+          persistentStorage = mkOption {
+            description = "should an rw nfs be mounted at /persistent";
+            type = bool;
+            default = true;
+          };
         };
       };
     };
@@ -121,6 +126,7 @@ with builtins; with lib; {
                 All the nixosConfigurations that should be bootable
                 all configurations have to have a <option>networking.hostName</option> and a <option>basement.netboot.uid</option>
               '';
+              default = [ ];
               type = listOf raw;
             };
           };
@@ -136,15 +142,23 @@ with builtins; with lib; {
         boot.initrd.supportedFilesystems = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.availableKernelModules = [ "nfs" "nfsv4" "overlay" ];
         boot.initrd.network.flushBeforeStage2 = false; # otherwise nfs dosen't work
+        boot.loader.grub.enable = false;
         boot.initrd.network.postCommands =
           let
             script = pkgs.writeScript "mount-dhcp" ''
               #!/bin/sh
               if [ ! -f /etc/basement-mounted ]; then
                 if [ -n "''$tftp" ]; then
-                  touch /etc/basement-mounted
-                  mount -t nfs4 -o ro $tftp:/nixstore /mnt-root/nix/.ro-store
-                fi
+                  echo "TFTP=$tftp" > /etc/basement-mounted
+                  mount -t nfs4 -o ro,async $tftp:/nixstore /mnt-root/nix/.ro-store
+                  mount -t nfs4 -o ro $tftp:/config /mnt-root/config
+                  ${optionalString cfg.persistentStorage ''
+                    mount -t nfs4 -o rw,async $tftp:/storage/${config.networking.hostName} /mnt-root/persistent
+                    mkdir -p /mnt-root/persistent/ssh || true
+                    mkdir -p /mnt-root/etc/ssh
+                    mount --bind /mnt-root/persistent/ssh /mnt-root/etc/ssh
+                  ''}
+               fi
               fi
             '';
           in
@@ -153,6 +167,8 @@ with builtins; with lib; {
             mkdir -p $targetRoot # creating /
             mount -t tmpfs -o size=2G tmpfs $targetRoot
             mkdir -m 0700 -p $targetRoot/nix/.ro-store # creating /nix
+            mkdir -m 0755 -p $targetRoot/config # creating /config
+            ${optionalString cfg.persistentStorage "mkdir -m 1755 -p $targetRoot/persistent"}
             for iface in $(ls /sys/class/net | grep -v ^lo$); do
               udhcpc --quit --now -i $iface -O tftp --script ${script}
             done
@@ -191,6 +207,7 @@ with builtins; with lib; {
 
 
         nbConfigs = cfg.configurations;
+        hostNames = map (x: x.config.networking.hostName) cfg.configurations;
         uefis = filter (conf: !conf.config.basement.netboot.isRpi) nbConfigs;
         rpis = filter (conf: conf.config.basement.netboot.isRpi) nbConfigs;
 
@@ -224,17 +241,18 @@ with builtins; with lib; {
             shell
           '';
           additionalTargets = {
-            # "bin-arm64-efi/ipxe.efi" = "ipxe-aarch64.efi";
             "bin-x86_64-efi/snponly.efi" = null;
             "bin/undionly.kpxe" = null;
           };
         };
 
-        netbootDir = pkgs.runCommand "basement-netboot" { } ''
-          mkdir $out
-          ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
-          ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
-        '';
+        netbootDir =
+          pkgs.runCommand "basement-netboot"
+            { } ''
+            mkdir $out
+            ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
+            ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
+          '';
 
 
       in
@@ -247,11 +265,17 @@ with builtins; with lib; {
           enable = true;
           root = netbootDir;
         };
+        systemd.tmpfiles.rules =
+          (map (y: "d /export/storage/${y} 1777 root root") hostNames) ++ [
+            "d /export/config 1755 root root"
+          ];
         services.nfs.server = {
           enable = true;
           exports = ''
-            /export ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRange)}
-            /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRange)}
+            /export ${concatStringsSep " " (map (x: "${x}(rw,fsid=0,no_subtree_check,no_root_squash)") cfg.nfsRanges)}
+            /export/config ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRanges)}
+            /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRanges)}
+            ${concatStringsSep "\n" (map (y: "/export/storage/${y} ${y}(rw,nohide,insecure,no_subtree_check,no_root_squash)") hostNames)}
           '';
         };
         services.nginx = {
