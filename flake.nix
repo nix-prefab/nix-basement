@@ -1,5 +1,5 @@
 {
-  description = "TODO: add description";
+  description = "Base library for nix-prefab (nix-basement)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
@@ -22,12 +22,10 @@
   };
 
   outputs = inputs:
-    let
-      baseLib = ((import ./lib { lib = inputs.nixpkgs.lib; }).loadLib inputs.nixpkgs.lib ./lib);
-    in
-    baseLib.generateFlakeOutputs ./. inputs (lib: with builtins; with lib; {
-
-      story = {
+  let
+    bootstrapLib = import ./lib { bootstrap = true; super = inputs.nixpkgs.lib; };
+  in
+    bootstrapLib.constructFlake ./. inputs (lib: with builtins; with lib; {
 
         generators = args@{ config, inputs, outputs, root, stories, unsafeStories, ... }:
           (recursiveMerge [

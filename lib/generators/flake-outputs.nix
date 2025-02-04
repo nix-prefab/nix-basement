@@ -1,7 +1,7 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  generateFlakeOutputs =
+  constructFlake =
     root:
     inputs:
     outputsFn:
@@ -44,6 +44,7 @@ with builtins; with lib; {
           outputs
         ]
       );
+  generateFlakeOutputs = trace "WARNING: generateFlakeOutputs has been renamed to constructFlake! generateFlakeOutputs may be removed in the future" constructFlake;
 
   getStories =
     inputs:

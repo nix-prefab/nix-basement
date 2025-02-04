@@ -11,6 +11,8 @@ with builtins; with lib; {
   mapListToAttrs = mapper: list: listToAttrs (map mapper list);
 
   # Combines a list of attrsets into a single attrset
-  recursiveMerge = list: foldl recursiveUpdate { } list;
+  recursiveUpdateList = list: foldl recursiveUpdate { } list;
+  recursiveMerge = trace "WARNING: recursiveMerge has been renamed to recursiveUpdateList! recursiveMerge may be removed in the future" recursiveUpdateList;
+
   flattenAttrs = trace "WARNING: flattenAttrs has been renamed to recursiveMerge! flattenAttrs may be removed in the future" recursiveMerge;
 }
