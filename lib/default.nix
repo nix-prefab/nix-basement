@@ -1,9 +1,10 @@
 # Entrypoint for the nix-basement library
-# Returns a nixpkgs lib passed in as `super` extended with the nix-basement functions
+# Returns the nixpkgs lib extended with the nix-basement functions
 # Returns an empty attrset if `bootstrap` is not set to prevent an infinite recursion
-{ bootstrap ? false, super, ... }:
+{ bootstrap ? false, inputs, ... }:
 let
-  overlay = (import ./base.nix { inherit super; }).loadLibOverlay ./.;
+  super = inputs.nixpkgs.lib;
+  overlay = (import ./base.nix { inherit super; }).loadLibOverlay ./. inputs;
 in
 if bootstrap == false
 then {}

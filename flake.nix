@@ -23,7 +23,7 @@
 
   outputs = inputs:
   let
-    bootstrapLib = import ./lib { bootstrap = true; super = inputs.nixpkgs.lib; };
+    bootstrapLib = import ./lib { inherit inputs; super = inputs.nixpkgs.lib; bootstrap = true; };
   in
     bootstrapLib.constructFlake ./. inputs (lib: with builtins; with lib; {
 

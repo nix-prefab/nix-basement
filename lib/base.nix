@@ -1,4 +1,4 @@
-args@{ super, ... }:
+{ super, ... }:
 let
   inherit (builtins)
     readDir
@@ -60,5 +60,5 @@ rec {
   # Recursively merge a list of attrsets, do not allow overwriting
   recursiveInsertList = list: foldl recursiveInsert { } list;
 
-  loadLibOverlay = path: final: prev: recursiveInsertList (map (file: import file { lib = final; super = prev; }) (find ".nix" ./.));
+  loadLibOverlay = path: inputs: final: prev: recursiveInsertList (map (file: import file { inherit inputs; lib = final; super = prev; }) (find ".nix" path));
 }
