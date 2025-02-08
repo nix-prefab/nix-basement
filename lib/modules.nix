@@ -1,15 +1,8 @@
 { lib, ... }:
 with builtins; with lib; {
 
-  findNixosModules = root:
-    if pathExists "${root}/nixos-modules" then
-      findModules "${root}/nixos-modules"
-    else
-      findModules "${root}/modules";
-
-  findDarwinModules = root:
-    findModules "${root}/darwin-modules";
-
+  # Find all nix files in a directory and import them.
+  # Returns them as an attrset with the file names as keys
   findModules = modulesPath:
     mapListToAttrs
       (file:
