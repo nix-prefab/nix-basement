@@ -4,8 +4,7 @@
 { bootstrap ? false, inputs, ... }:
 let
   super = inputs.nixpkgs.lib;
-  overlay = (import ./base.nix { inherit super; }).loadLibOverlay ./. inputs;
 in
 if bootstrap == false
 then {}
-else super.extend overlay
+else (import ./base.nix { inherit super; }).loadExtendedLib ./. inputs super

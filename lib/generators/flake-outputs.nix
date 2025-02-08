@@ -1,58 +1,90 @@
-{ lib, ... }:
-with builtins; with lib; {
-
+{ lib, super, ... }:
+let
+  inherit (builtins)
+    trace
+    ;
+  inherit (lib)
+    filter
+    filterAttrs
+    loadLib
+    mapAttrsToList
+    optionalAttrs
+    recursiveInsertList
+    recursiveUpdate
+    mkOption
+    types
+    ;
+in
+rec {
   constructFlake =
     root:
     inputs:
-    outputsFn:
+    module:
     let
-      # TODO Make this document-able somehow
-      defaultConfig = {
-        systems = [ "x86_64-linux" "aarch64-linux" "x86_64-darwin" "aarch64-darwin" ];
-        nixpkgs = inputs.nixpkgs;
-        nixpkgsConfig = { };
-        checkFormatting = true;
-      };
+      stories = getStories inputs;
 
-      safeInputs = inputs // { self = outputs; }; # Replace self with unprocessed outputs to avoid infinite recursion
-      stories = getStories safeInputs;
-      unsafeStories = getStories inputs;
 
-      upstreamLibs = foldl recursiveUpdate config.nixpkgs.lib (map (story: story.lib) (filter (story: story ? lib) stories));
-      ownLibs =
-        if pathExists "${root}/lib"
-        then loadLib upstreamLibs "${root}/lib"
-        else { };
-      mergedLibs = recursiveUpdate upstreamLibs ownLibs;
-
-      outputs = outputsFn mergedLibs;
-
-      config = recursiveUpdate defaultConfig (if (outputs ? basement) then outputs.basement else { });
-
-      generatorArgs = {
-        inherit config inputs outputs root stories unsafeStories;
-        lib = mergedLibs;
-      };
-      # Run all output generators
-      generatedOutputs = recursiveMerge (map (s: s.generators generatorArgs) (filter (s: s ? generators) stories));
-    in
-    filterAttrs
-      (n: v: n != "basement") # Remove config from the output
-      (
-        recursiveMerge [
-          generatedOutputs
-          outputs
-        ]
+      # Combine the base lib with all story libs
+      superLib = recursiveInsertList (
+        [inputs.nixpkgs.lib] # TODO: Maybe fallback to the currently used lib if there is no nixpkgs input?
+        ++
+        (map (story: story.lib) (filter (story: story ? lib) stories))
       );
+
+      # TODO: Check if the lib dir exists at all
+      # Library functions of the current story
+      lib' = loadLib "${root}/lib" inputs superLib;
+
+      libOption = mkOption {
+        type =
+          with types;
+          let
+            recType = either (functionTo anything) recType;
+          in attrsOf recType;
+        default = { };
+        description = ''
+          A set of library functions
+        '';
+      };
+    in
+    lib.mkFlake {
+      inherit inputs;
+      specialArgs = {
+        inherit root;
+        inherit stories;
+        lib = recursiveUpdate superLib lib';
+      };
+    } (
+      { lib, root, inputs, ... }: {
+        imports = [ module ];
+
+         options = {
+          flake = {
+            story = {
+              lib = libOption;
+            };
+
+            lib = libOption;
+          };
+        };
+
+        config = {
+          flake = {
+            lib = lib';
+          };
+        };
+      }
+    );
+
   generateFlakeOutputs = trace "WARNING: generateFlakeOutputs has been renamed to constructFlake! generateFlakeOutputs may be removed in the future" constructFlake;
 
   getStories =
     inputs:
     let
-      storyInputs = filterAttrs (n: v: v ? story) inputs;
+      otherInputs = filterAttrs (n: v: n != "self") inputs;
+      storyInputs = filterAttrs (n: v: v ? story) otherInputs;
     in
     mapAttrsToList
       (n: v: v.story // (optionalAttrs (!v.story ? name) { name = n; }))
       storyInputs;
-
 }

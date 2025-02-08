@@ -13,6 +13,7 @@ let
     isAttrs
     length
     mapAttrsToList
+    recursiveUpdate
     zipAttrsWith
     ;
 in
@@ -60,5 +61,11 @@ rec {
   # Recursively merge a list of attrsets, do not allow overwriting
   recursiveInsertList = list: foldl recursiveInsert { } list;
 
-  loadLibOverlay = path: inputs: final: prev: recursiveInsertList (map (file: import file { inherit inputs; lib = final; super = prev; }) (find ".nix" path));
+  # Load a nix library from `path` and return all discovered functions as an attrset
+  loadLib = path: inputs: super:
+    recursiveInsertList (map (file: import file { inherit inputs super; lib = loadExtendedLib path inputs super; }) (find ".nix" path));
+
+  # Like loadLib, but returns super extended with the loaded library functions
+  loadExtendedLib = path: inputs: super:
+    recursiveUpdate super (loadLib path inputs super);
 }
