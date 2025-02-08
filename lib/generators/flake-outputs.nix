@@ -1,7 +1,7 @@
-{ lib, super, ... }:
+{ lib, ... }:
 let
   inherit (builtins)
-    trace
+    readDir
     ;
   inherit (lib)
     filter
@@ -32,9 +32,13 @@ rec {
         (map (story: story.lib) (filter (story: story ? lib) stories))
       );
 
-      # TODO: Check if the lib dir exists at all
       # Library functions of the current story
-      lib' = loadLib "${root}/lib" inputs superLib;
+      lib' =
+        if (readDir root) ? lib
+        then
+          loadLib "${root}/lib" inputs superLib
+        else
+          { };
 
       libOption = mkOption {
         type =
