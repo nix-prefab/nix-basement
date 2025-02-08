@@ -17,12 +17,13 @@ let
 in
 rec {
   constructFlake =
-    root:
-    inputs:
+    { root
+    , inputs
+    , specialArgs ? { }
+    }:
     module:
     let
       stories = getStories inputs;
-
 
       # Combine the base lib with all story libs
       superLib = recursiveInsertList (
@@ -53,7 +54,7 @@ rec {
         inherit root;
         inherit stories;
         lib = recursiveUpdate superLib lib';
-      };
+      } // specialArgs;
     } (
       { lib, root, inputs, ... }: {
         imports = [ module ];

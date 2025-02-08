@@ -10,13 +10,15 @@
   let
     bootstrapLib = import ./lib { inherit inputs; super = inputs.nixpkgs.lib; bootstrap = true; };
   in
-    bootstrapLib.constructFlake ./. inputs ({ lib, ... }: {
-      systems = [ ];
+    bootstrapLib.constructFlake { inherit inputs; root = ./.; } (
+      { lib, ... }: {
+        systems = [ ];
 
-      flake = {
-        story = {
-          lib = self.lib;
+        flake = {
+          story = {
+            lib = self.lib;
+          };
         };
-      };
-    });
+      }
+    );
 }
