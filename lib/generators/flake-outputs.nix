@@ -77,8 +77,6 @@ rec {
       }
     );
 
-  generateFlakeOutputs = trace "WARNING: generateFlakeOutputs has been renamed to constructFlake! generateFlakeOutputs may be removed in the future" constructFlake;
-
   getStories =
     inputs:
     let
