@@ -1,5 +1,21 @@
 { lib, ... }:
-with builtins; with lib; {
+let
+  inherit (lib)
+    attrValues
+    find
+    getAttrFromPath
+    isAttrs
+    mapListToAttrs
+    mkEnableOption
+    mkIf
+    nameValuePair'
+    recursiveUpdate
+    removePrefix
+    removeSuffix
+    setAttrByPath
+  ;
+in
+{
 
   # Find all nix files in a directory and import them.
   # Returns them as an attrset with the file names as keys
@@ -11,6 +27,12 @@ with builtins; with lib; {
           (import file)
       )
       (find ".nix" modulesPath);
+
+  mkCombinedModule = modules:
+    args:
+    {
+      imports = if isAttrs modules then attrValues modules else modules;
+    };
 
   # Takes a path to an option, a description of a module and that module and wraps the module, so that it may be enabled by setting the newly created option to true
   mkEnableableModule = optionPath: description: module: (

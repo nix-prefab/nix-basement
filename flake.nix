@@ -16,6 +16,7 @@
 
         flake = {
           story = {
+            flakeModule = lib.mkCombinedModule self.flakeModules;
             lib = self.lib;
           };
         };

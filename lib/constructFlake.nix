@@ -1,18 +1,20 @@
-{ lib, ... }:
+{ lib, inputs, ... }:
 let
+  inputs' = inputs;
+
   inherit (builtins)
     readDir
     ;
   inherit (lib)
     filter
     filterAttrs
+    findModules
     loadLib
     mapAttrsToList
+    mkCombinedModule
     optionalAttrs
     recursiveInsertList
     recursiveUpdate
-    mkOption
-    types
     ;
 in
 rec {
@@ -40,17 +42,7 @@ rec {
         else
           { };
 
-      libOption = mkOption {
-        type =
-          with types;
-          let
-            recType = either (functionTo anything) recType;
-          in attrsOf recType;
-        default = { };
-        description = ''
-          A set of library functions
-        '';
-      };
+      flakeModules' = findModules "${root}/flakeModules";
     in
     lib.mkFlake {
       inherit inputs;
@@ -61,21 +53,18 @@ rec {
       } // specialArgs;
     } (
       { lib, root, inputs, ... }: {
-        imports = [ module ];
-
-         options = {
-          flake = {
-            story = {
-              lib = libOption;
-            };
-
-            lib = libOption;
-          };
-        };
+        imports = [
+          module
+          (mkCombinedModule flakeModules')
+          inputs.flake-parts.flakeModules.flakeModules
+        ]
+        ++
+        (map (story: story.flakeModule) (filter (story: (story.flakeModule or null) != null) stories));
 
         config = {
           flake = {
             lib = lib';
+            flakeModules = flakeModules';
           };
         };
       }
