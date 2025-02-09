@@ -1,5 +1,7 @@
 { lib, inputs, ... }:
 let
+  # constructFlake gets the inputs of the calling flake passed in
+  # make the inputs of nix-basement available there
   inputs' = inputs;
 
   inherit (builtins)
@@ -29,7 +31,7 @@ rec {
 
       # Combine the base lib with all story libs
       superLib = recursiveInsertList (
-        [inputs.nixpkgs.lib] # TODO: Maybe fallback to the currently used lib if there is no nixpkgs input?
+        [inputs'.nixpkgs.lib]
         ++
         (map (story: story.lib) (filter (story: story ? lib) stories))
       );
@@ -56,7 +58,7 @@ rec {
         imports = [
           module
           (mkCombinedModule flakeModules')
-          inputs.flake-parts.flakeModules.flakeModules
+          inputs'.flake-parts.flakeModules.flakeModules
         ]
         ++
         (map (story: story.flakeModule) (filter (story: (story.flakeModule or null) != null) stories));
