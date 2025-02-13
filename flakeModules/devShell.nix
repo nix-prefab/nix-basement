@@ -94,12 +94,10 @@ in
       };
 
     flake = {
-      story.shell = (_: break _) (
-        mapAttrs (system: v: {
-          packages = v.story.shell.packages;
-          hook = v.story.shell.hook;
-        }) config.allSystems
-      );
+      story.shell = mapAttrs (system: v: {
+        packages = v.story.shell.packages;
+        hook = v.story.shell.hook;
+      }) config.allSystems;
     };
   };
 }
