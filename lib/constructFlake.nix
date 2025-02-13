@@ -45,6 +45,7 @@ rec {
           { };
 
       flakeModules' = findModules "${root}/flakeModules";
+      combinedModules = mkCombinedModule flakeModules';
     in
     lib.mkFlake {
       inherit inputs;
@@ -57,7 +58,7 @@ rec {
       { lib, root, inputs, ... }: {
         imports = [
           module
-          (mkCombinedModule flakeModules')
+          combinedModules
           inputs'.flake-parts.flakeModules.flakeModules
         ]
         ++
@@ -66,7 +67,9 @@ rec {
         config = {
           flake = {
             lib = lib';
-            flakeModules = flakeModules';
+            flakeModules = {
+              default = combinedModules;
+            } // flakeModules';
           };
         };
       }
