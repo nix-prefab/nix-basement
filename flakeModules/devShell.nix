@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  getSystem,
   stories,
   ...
 }:
@@ -81,15 +80,15 @@ in
 
   config = {
     perSystem =
-      { system, pkgs, ... }:
+      { pkgs, config, ... }:
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = (getSystem system).shell.packages ++ (map (story: story.shell.packages) stories);
+          buildInputs = config.shell.packages ++ (map (story: story.shell.packages) stories);
 
           shellHook = ''
             ${(concatStringsSep "\n" (map (story: story.shell.hook) stories))}
 
-            ${(getSystem system).shell.hook}
+            ${config.shell.hook}
           '';
         };
       };
