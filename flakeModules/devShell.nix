@@ -1,4 +1,10 @@
-{ config, lib, getSystem, stories, ... }:
+{
+  config,
+  lib,
+  getSystem,
+  stories,
+  ...
+}:
 let
   inherit (lib)
     concatStringsSep
@@ -74,29 +80,27 @@ in
   };
 
   config = {
-    perSystem = { system, pkgs, ... }: {
-      devShells.default = pkgs.mkShell {
-        buildInputs =
-          (getSystem system).shell.packages
-          ++
-          (map
-            (story: story.shell.packages)
-            stories
-          );
+    perSystem =
+      { system, pkgs, ... }:
+      {
+        devShells.default = pkgs.mkShell {
+          buildInputs = (getSystem system).shell.packages ++ (map (story: story.shell.packages) stories);
 
-        shellHook = ''
-          ${(concatStringsSep "\n" (map (story: story.shell.hook) stories))}
+          shellHook = ''
+            ${(concatStringsSep "\n" (map (story: story.shell.hook) stories))}
 
-          ${(getSystem system).shell.hook}
-        '';
+            ${(getSystem system).shell.hook}
+          '';
+        };
       };
-    };
 
     flake = {
-      story.shell = (_: break _) (mapAttrs (system: v: {
-        packages = v.story.shell.packages;
-        hook = v.story.shell.hook;
-      }) config.allSystems);
+      story.shell = (_: break _) (
+        mapAttrs (system: v: {
+          packages = v.story.shell.packages;
+          hook = v.story.shell.hook;
+        }) config.allSystems
+      );
     };
   };
 }

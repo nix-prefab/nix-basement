@@ -6,25 +6,42 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
-  outputs = inputs@{ self, ... }:
-  let
-    bootstrapLib = import ./lib { inherit inputs; super = inputs.nixpkgs.lib; bootstrap = true; };
-  in
-    bootstrapLib.constructFlake { inherit inputs; root = ./.; } (
-      { lib, getSystem, ... }: {
-        systems = lib.systems.flakeExposed; # All nixpkgs systems
-
-        flake = {
-          story = {
-            flakeModule = lib.mkCombinedModule self.flakeModules;
-            lib = self.lib;
-          };
-        };
-
-        perSystem = { pkgs, system, ... }: {
-          story.shell.packages = [  ];
-          shell.packages = (getSystem system).story.shell.packages;
-        };
+  outputs =
+    inputs@{ self, ... }:
+    let
+      bootstrapLib = import ./lib {
+        inherit inputs;
+        super = inputs.nixpkgs.lib;
+        bootstrap = true;
+      };
+    in
+    bootstrapLib.constructFlake
+      {
+        inherit inputs;
+        root = ./.;
       }
-    );
+      (
+        { lib, getSystem, ... }:
+        {
+          systems = lib.systems.flakeExposed; # All nixpkgs systems
+
+          flake = {
+            story = {
+              flakeModule = lib.mkCombinedModule self.flakeModules;
+              lib = self.lib;
+            };
+          };
+
+          perSystem =
+            { pkgs, system, ... }:
+            {
+              story = {
+                shell.packages = [ ];
+              };
+              shell.packages = (getSystem system).story.shell.packages;
+
+              formatter = pkgs.nixfmt-rfc-style;
+            };
+        }
+      );
 }

@@ -1,5 +1,7 @@
 { lib, ... }:
-with builtins; with lib; {
+with builtins;
+with lib;
+{
   nameValuePair' =
     name: value:
     # String carries context of the derivation the file comes from.

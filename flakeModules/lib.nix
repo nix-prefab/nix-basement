@@ -13,7 +13,8 @@ let
   libType =
     let
       recType = either (functionTo anything) recType;
-    in attrsOf recType;
+    in
+    attrsOf recType;
 in
 {
   options = {
@@ -26,7 +27,7 @@ in
         };
       };
 
-      lib =  mkOption {
+      lib = mkOption {
         type = libType;
         description = "A set of library functions";
         default = { };
