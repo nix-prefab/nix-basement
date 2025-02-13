@@ -8,6 +8,7 @@ let
   inherit (lib)
     concatStringsSep
     mapAttrs
+    mapAttrs'
     mkOption
     mkPerSystemOption
     ;
@@ -80,7 +81,12 @@ in
 
   config = {
     perSystem =
-      { pkgs, config, ... }:
+      {
+        pkgs,
+        config,
+        self',
+        ...
+      }:
       {
         devShells.default = pkgs.mkShell {
           buildInputs = config.shell.packages ++ (map (story: story.shell.packages) stories);
@@ -91,6 +97,11 @@ in
             ${config.shell.hook}
           '';
         };
+
+        buildJobs = mapAttrs' (system: v: {
+          name = "shell-${system}";
+          value = v;
+        }) self'.devShells;
       };
 
     flake = {
