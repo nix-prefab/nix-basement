@@ -4,10 +4,8 @@ let
     mkOption
     ;
   inherit (lib.types)
-    attrsOf
-    anything
     nullOr
-    functionTo
+    deferredModule
     ;
 in
 {
@@ -15,7 +13,7 @@ in
     flake = {
       story = {
         flakeModule = mkOption {
-          type = nullOr (functionTo (attrsOf anything));
+          type = nullOr deferredModule;
           description = "A flake parts flakeModule that should be loaded in all stories built on top of this one";
           default = null;
         };
