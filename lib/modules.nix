@@ -21,9 +21,12 @@ in
   # Returns them as an attrset with the file names as keys
   findModules =
     modulesPath:
-    mapListToAttrs (
-      file: nameValuePair' (removeSuffix ".nix" (removePrefix "${modulesPath}/" file)) (import file)
-    ) (find ".nix" modulesPath);
+    if !builtins.pathExists modulesPath then
+      { }
+    else
+      mapListToAttrs (
+        file: nameValuePair' (removeSuffix ".nix" (removePrefix "${modulesPath}/" file)) (import file)
+      ) (find ".nix" modulesPath);
 
   mkCombinedModule = modules: args: {
     imports = if isAttrs modules then attrValues modules else modules;
