@@ -27,7 +27,7 @@
 
           flake = {
             story = {
-              flakeModule = lib.mkCombinedModule self.flakeModules;
+              flakeModule = self.flakeModules.default;
               lib = self.lib;
             };
           };
