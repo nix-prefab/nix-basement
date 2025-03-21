@@ -1,11 +1,16 @@
-{
-  lib,
-  final,
-  prev,
-  ...
-}:
-with builtins;
-with lib;
+{ lib, ... }:
+prev: prev:
+let
+  inherit (builtins)
+    fromJSON
+    ;
+  inherit (lib)
+    readFile
+    ;
+  inherit (lib.generators)
+    toJSON
+    ;
+in
 {
 
   fromYAML =
@@ -24,7 +29,7 @@ with lib;
   toYAML =
     input:
     let
-      inFile = prev.writeText "data.json" (toJSON input);
+      inFile = prev.writeText "data.json" (toJSON {} input);
     in
     (readFile (
       prev.runCommand "data.yaml" { } ''

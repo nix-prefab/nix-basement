@@ -1,11 +1,5 @@
-{
-  lib,
-  final,
-  prev,
-  ...
-}:
-with builtins;
-with lib;
+{ ... }:
+final: prev:
 {
 
   emptyScript = prev.writeShellScript "emptyScript" "";

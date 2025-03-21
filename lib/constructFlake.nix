@@ -8,6 +8,7 @@ let
     readDir
     ;
   inherit (lib)
+    attrByPath
     filter
     filterAttrs
     findModules
@@ -62,7 +63,7 @@ rec {
             module
             combinedModules
             inputs'.flake-parts.flakeModules.flakeModules
-          ] ++ (map (story: story.flakeModule) (filter (story: (story.flakeModule or null) != null) stories));
+          ] ++ (getStoryDefinitions stories [ "flakeModules" ]);
 
           config = {
             flake = {
@@ -82,4 +83,9 @@ rec {
       storyInputs = filterAttrs (n: v: v ? story) otherInputs;
     in
     mapAttrsToList (n: v: v.story // (optionalAttrs (!v.story ? name) { name = n; })) storyInputs;
+
+  getStoryDefinitions =
+    stories:
+    path:
+    filter (val: val != null) (map (story: attrByPath path null story) stories);
 }

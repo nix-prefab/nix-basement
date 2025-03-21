@@ -25,6 +25,8 @@
         {
           systems = lib.systems.flakeExposed; # All nixpkgs systems
 
+          nixpkgs.applyDefaultOverlay = true;
+
           flake = {
             story = {
               flakeModule = self.flakeModules.default;
