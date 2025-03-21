@@ -11,10 +11,12 @@ let
   inherit (lib)
     attrValues
     findModules
-    mapAttrs
     getStoryDefinitions
+    length
+    mapAttrs
     mkCombinedOverlay
     mkEnableOption
+    mkIf
     mkOption
     optional
     types
@@ -58,7 +60,7 @@ in
   {
     flake = {
       overlays = {
-        default = combinedOverlay;
+        default = mkIf (length (attrValues overlays') > 0) combinedOverlay;
       } // overlays';
     };
 
