@@ -1,0 +1,11 @@
+- TODOs
+ - [ ] Write README
+ - [ ] Write some docs
+ - [x] nixpkgs
+ - [ ] templates
+ - [ ] put all nixos / nix-darwin modules into stories
+ - [ ] nix-story-deploy-rs
+ - [ ] nix-story-treefmt
+ - [ ] np cli for managing inputs
+    - Auto-set follows
+    - Apply templates
