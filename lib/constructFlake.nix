@@ -62,7 +62,7 @@ rec {
             module
             combinedModules
             inputs'.flake-parts.flakeModules.flakeModules
-          ] ++ (getStoryDefinitions stories [ "flakeModules" ]);
+          ] ++ (getStoryDefinitions stories [ "flakeModule" ]);
 
           config = {
             flake = {
