@@ -46,8 +46,7 @@ rec {
       {
         inherit inputs;
         specialArgs = {
-          inherit root;
-          inherit stories;
+          inherit root stories inputs';
           lib = recursiveUpdate superLib lib';
         } // specialArgs;
       }

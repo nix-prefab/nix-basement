@@ -2,6 +2,7 @@ attrs@{
   config,
   options,
   inputs,
+  inputs',
   lib,
   stories,
   root,
@@ -22,15 +23,17 @@ let
     types
     ;
 
+  nixpkgs = inputs.nixpkgs or inputs'.nixpkgs;
+
   overlay_t = (options.flake.type.getSubOptions options.flake.loc).overlays.type.nestedTypes.elemType;
 in
 {
   options = {
     # Get the option type from nixpkgs itself so it always stays up-to-date
     nixpkgs = {
-      config = (import "${inputs.nixpkgs}/pkgs/top-level/config.nix" {
+      config = (import "${nixpkgs}/pkgs/top-level/config.nix" {
         config = null;
-        lib = inputs.nixpkgs.lib;
+        lib = nixpkgs.lib;
       }).options;
 
       applyDefaultOverlay = mkEnableOption "Automatically apply overlays.\${system}.default when loading nixpkgs";
@@ -45,7 +48,8 @@ in
     flake = {
       story.overlay = mkOption {
         # Get the type of a single overlay from the flake-parts definition
-        type = overlay_t;
+        type = types.nullOr overlay_t;
+        default = null;
       };
     };
 
@@ -67,7 +71,7 @@ in
     perSystem =
       { system, ... }:
       {
-        _module.args.pkgs = import inputs.nixpkgs {
+        _module.args.pkgs = import nixpkgs {
           inherit system;
           overlays =
             config.nixpkgs.overlays
