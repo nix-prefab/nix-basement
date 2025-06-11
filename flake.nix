@@ -2,7 +2,7 @@
   description = "TODO: add description";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nmd = {
       url = "github:nix-basement/nmd";
       flake = false;
@@ -96,10 +96,9 @@
             buildInputs = with pkgs;
               flatten [
                 agenix
-                nixpkgs.legacyPackages.${system}.deploy-rs
+                inputs.deploy-rs.packages.${system}.deploy-rs
                 nixpkgs-fmt
                 rage
-
                 (attrValues self.packages.${system})
               ];
           };

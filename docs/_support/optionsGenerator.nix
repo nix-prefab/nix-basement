@@ -107,7 +107,7 @@ let
     else
       x;
 
-  j2a = pkgs.substituteAll { src = ./optionsJsonToAdoc.py; pandoc = pkgs.pandoc; python = pkgs.python3; };
+  j2a = pkgs.replaceVars { src = ./optionsJsonToAdoc.py; pandoc = pkgs.pandoc; python = pkgs.python3; };
   jsonToAdoc = jsonFile: pkgs.runCommandNoCC "jsonToAdoc" { } ''
     ${pkgs.python3}/bin/python3 ${j2a} "${jsonFile}" "${title}" > $out
   '';
