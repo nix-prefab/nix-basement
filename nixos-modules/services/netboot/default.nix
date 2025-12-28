@@ -250,8 +250,8 @@ with builtins; with lib; {
         services.nfs.server = {
           enable = true;
           exports = ''
-            /export ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRange)}
-            /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRange)}
+            /export ${concatStringsSep " " (map (x: "${x}(ro,fsid=0,no_subtree_check)") cfg.nfsRanges)}
+            /export/nixstore ${concatStringsSep " " (map (x: "${x}(ro,nohide,insecure,no_subtree_check)") cfg.nfsRanges)}
           '';
         };
         services.nginx = {
