@@ -141,9 +141,10 @@ with builtins; with lib; {
             script = pkgs.writeScript "mount-dhcp" ''
               #!/bin/sh
               if [ ! -f /etc/basement-mounted ]; then
+                # Use siaddr (Next server IP) if available, as it is an IP and avoids DNS issues.
                 if [ -n "''$tftp" ]; then
                   touch /etc/basement-mounted
-                  mount -t nfs4 -o ro $tftp:/nixstore /mnt-root/nix/.ro-store
+                  ${pkgs.nfs-utils}/bin/mount.nfs4 -o ro,nolock $tftp:/nixstore /mnt-root/nix/.ro-store
                 fi
               fi
             '';
