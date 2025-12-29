@@ -202,8 +202,7 @@ with builtins; with lib; {
         rpiConfigsMap = foldr (a: b: a // b) { } rpiConfigsArr;
         rpiConfigs = toJSON rpiConfigsMap;
 
-        ipxe = pkgs.ipxe.override {
-          embedScript = pkgs.writeText "ipxe-embed.ipxe" ''
+        ipxeEmbedScript = pkgs.writeText "ipxe-embed.ipxe" ''
             #!ipxe
             :start
             echo
@@ -224,16 +223,33 @@ with builtins; with lib; {
             echo Your state of not booting will continue.
             shell
           '';
+
+        ipxe = pkgs.ipxe.override {
+          embedScript = ipxeEmbedScript;
           additionalTargets = {
-            # "bin-arm64-efi/ipxe.efi" = "ipxe-aarch64.efi";
             "bin-x86_64-efi/snponly.efi" = null;
             "bin/undionly.kpxe" = null;
           };
         };
 
+        ipxeAarch64 = pkgs.pkgsCross.aarch64-multiplatform.ipxe.override {
+          embedScript = ipxeEmbedScript;
+          additionalTargets = {
+            "bin-arm64-efi/snponly.efi" = null;
+          };
+        };
+
+        ipxeCombined = pkgs.runCommandNoCC "ipxe-combined" { } ''
+          mkdir $out
+          cp ${ipxe}/undionly.kpxe $out/undionly.kpxe
+          cp ${ipxe}/snponly.efi $out/snponly.efi
+          cp ${ipxeAarch64}/snponly.efi $out/snponly-aarch64.efi
+        '';
+
+
         netbootDir = pkgs.runCommand "basement-netboot" { } ''
           mkdir $out
-          ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxe}'
+          ${pkgs.python3}/bin/python ${./generateIpxeConfigs.py} '${uefiConfigs}' '${ipxeCombined}'
           ${pkgs.python3}/bin/python ${./generateRpiConfigs.py} '${rpiConfigs}'
         '';
 
