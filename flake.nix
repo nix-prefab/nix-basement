@@ -2,7 +2,7 @@
   description = "TODO: add description";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
     nmd = {
       url = "github:nix-basement/nmd";
       flake = false;
@@ -37,8 +37,8 @@
       overlays = findOverlays self true
         (final: prev: {
           inherit lib; # overwrite pkgs.lib with our extended lib
-          agenix = inputs.agenix.packages.${prev.system}.agenix;
-          base = self.packages.${prev.system}; # Add our packages to the base scope
+          agenix = inputs.agenix.packages.${prev.stdenv.hostPlatform.system}.agenix;
+          base = self.packages.${prev.stdenv.hostPlatform.system}; # Add our packages to the base scope
         });
 
     } // (flake-utils.lib.eachDefaultSystem (system:
@@ -52,35 +52,38 @@
       in
       {
         # system-specific outputs
+        packages = {
+          decrypt = pkgs.replaceVarsWith {
+            name = "decrypt";
+            src = ./scripts/decrypt;
+            dir = "bin";
+            isExecutable = true;
 
-        packages = listToAttrs
-          (
-            map
-              (file: rec {
-                name = unsafeDiscardStringContext (replaceStrings [ "/" ] [ "-" ] (removePrefix "${self}/scripts/" file)); # this is safe, actually
-                value = pkgs.substituteAll {
-                  inherit name;
-                  src = file;
-                  dir = "bin";
-                  isExecutable = true;
+            replacements = {
+              inherit (pkgs) bash rage;
+            };
+          };
+          encrypt = pkgs.replaceVarsWith {
+            name = "encrypt";
+            src = ./scripts/encrypt;
+            dir = "bin";
+            isExecutable = true;
 
-                  # packages that are available to the scripts
-                  inherit (pkgs)
-                    bash
-                    gnused
-                    jq
-                    nix
-                    python3
-                    rage
-                    ;
+            replacements = {
+              inherit (pkgs) bash rage gnused nix;
+            };
+          };
+          update-keys = pkgs.replaceVarsWith {
+            name = "update-keys";
+            src = ./scripts/update-keys;
+            dir = "bin";
+            isExecutable = true;
 
-                  wireguard = pkgs.wireguard-tools;
-                  nixpkgs = toString inputs.nixpkgs;
-                  nixfmt = pkgs.nixfmt-rfc-style;
-                };
-              })
-              (find "" "${self}/scripts")
-          );
+            replacements = {
+              inherit (pkgs) python3 nix nixfmt;
+            };
+          };
+        };
 
         apps = mapAttrs
           (name: value:
