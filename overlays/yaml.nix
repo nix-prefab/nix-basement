@@ -1,5 +1,5 @@
 { lib, ... }:
-prev: prev:
+final: prev:
 let
   inherit (builtins)
     fromJSON
