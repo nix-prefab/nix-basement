@@ -17,7 +17,6 @@ let
     mapAttrs
     mkCombinedOverlay
     mkEnableOption
-    mkIf
     mkOption
     optional
     types
@@ -62,11 +61,13 @@ in
     combinedOverlay = mkCombinedOverlay (attrValues overlays');
   in
   {
-    flake = {
-      overlays = {
-        default = mkIf (length (attrValues overlays') > 0) combinedOverlay;
-      } // overlays';
-    };
+    flake.overlays =
+      let
+        defaultAttr = if (length (attrValues overlays') > 0)
+          then { default = combinedOverlay; }
+          else {};
+      in
+      defaultAttr // overlays';
 
     perSystem =
       { system, ... }:
