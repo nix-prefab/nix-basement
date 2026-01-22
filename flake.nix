@@ -32,6 +32,7 @@
 
           flake = {
             story = {
+              id = "prefab.basement";
               flakeModule = self.flakeModules.default;
               lib = self.lib;
             };
