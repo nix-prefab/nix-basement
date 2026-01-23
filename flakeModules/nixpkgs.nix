@@ -11,7 +11,7 @@ attrs@{
 let
   inherit (lib)
     attrValues
-    findModules
+    findPackages
     getStoryDefinitions
     length
     mapAttrs
@@ -56,7 +56,7 @@ in
 
   config =
   let
-    overlayModules = findModules "${root}/overlays";
+    overlayModules = findPackages "${root}/overlays";
     overlays' = mapAttrs (n: v: v attrs) overlayModules;
     combinedOverlay = mkCombinedOverlay (attrValues overlays');
   in
