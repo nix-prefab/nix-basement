@@ -10,8 +10,22 @@ in
 with lib;
 {
 
-  # Find all top-level nix files and top-level directories containing a default.nix and import them
-  # Returns them as an attribute set with the file-/directory names as the keys.
+  /**
+    Find all top-level nix files and top-level directories containing a default.nix and import them.
+    Returns them as an attribute set with the file-/directory names as the keys.
+
+    # Inputs
+
+    `dir`
+
+    : The directory to search in
+
+    # Type
+
+    ```
+    findPackages :: Path -> AttrSet ?
+    ```
+   */
   findPackages =
     dir:
     if !builtins.pathExists dir then

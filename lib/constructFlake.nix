@@ -21,6 +21,37 @@ let
     ;
 in
 rec {
+  /**
+    Constructs a flake from a root directory and inputs.
+
+    # Inputs
+
+    `args`
+
+    : Set containing `root`, `inputs`, and optionally `specialArgs`
+
+    `args.root`
+
+    : A path value pointing to the root directory of the flake
+
+    `args.inputs`
+
+    : The inputs of the flake
+
+    `args.specialArgs`
+
+    : Optional special arguments to pass to all flake modules
+
+    `module`
+
+    : The root flake module to evaluate
+
+    # Type
+
+    ```
+    constructFlake :: { root :: Path, inputs :: AttrSet Flake, specialArgs :: AttrSet ? } -> Module -> Flake
+    ```
+   */
   constructFlake =
     {
       root,
@@ -75,6 +106,21 @@ rec {
         }
       );
 
+  /**
+    Get all stories from the flake inputs.
+
+    # Inputs
+
+    `inputs`
+
+    : The flake inputs
+
+    # Type
+
+    ```
+    getStories :: AttrSet Flake -> [Story]
+    ```
+   */
   getStories =
     inputs:
     let
@@ -83,6 +129,25 @@ rec {
     in
     mapAttrsToList (n: v: v.story // (optionalAttrs (!v.story ? name) { name = n; })) storyInputs;
 
+  /**
+    Retrieves definitions at a given attribute path from a list of stories.
+
+    # Inputs
+
+    `stories`
+
+    : List of stories
+
+    `path`
+
+    : Path to the attribute in each story
+
+    # Type
+
+    ```
+    getStoryDefinitions :: [AttrSet Story] -> [String] -> [?]
+    ```
+   */
   getStoryDefinitions =
     stories:
     path:

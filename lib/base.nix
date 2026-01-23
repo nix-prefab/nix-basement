@@ -18,9 +18,25 @@ let
     ;
 in
 rec {
-  # Given a filename suffix and a path to a directory,
-  # recursively finds all files whose names end in that suffix.
-  # Returns the filenames as a list
+  /**
+    Given a filename suffix and a path to a directory, recursively finds all files whose names end in that suffix.
+
+    # Inputs
+
+    `suffix`
+
+    : The suffix to look for (e.g. ".nix")
+
+    `dir`
+
+    : The directory to search in
+
+    # Type
+
+    ```
+    find :: String -> Path -> [Path]
+    ```
+   */
   find =
     suffix: dir:
     flatten (
@@ -36,7 +52,25 @@ rec {
       ) (readDir dir)
     );
 
-  # Merge two attrsets recursively like `lib.recursiveUpdate`, but do not allow overwriting
+  /**
+    Merge two attrsets recursively like `lib.recursiveUpdate`, but do not allow overwriting
+
+    # Inputs
+
+    `lhs`
+
+    : First attrset
+
+    `rhs`
+
+    : Second attrset
+
+    # Type
+
+    ```
+    recursiveInsert :: AttrSet ? -> AttrSet ? -> AttrSet ?
+    ```
+   */
   recursiveInsert =
     lhs: rhs:
     let
@@ -57,10 +91,46 @@ rec {
     in
     recurse [ ] [ rhs lhs ];
 
-  # Recursively merge a list of attrsets, do not allow overwriting
+  /**
+    Recursively merge a list of attrsets, do not allow overwriting
+
+    # Inputs
+
+    `list`
+
+    : List of attrsets to merge
+
+    # Type
+
+    ```
+    recursiveInsertList :: [AttrSet a] -> AttrSet a
+    ```
+   */
   recursiveInsertList = list: foldl recursiveInsert { } list;
 
-  # Load a nix library from `path` and return all discovered functions as an attrset
+  /**
+    Load a nix library from `path` and return all discovered functions as an attrset
+
+    # Inputs
+
+    `path`
+
+    : The path to the library directory
+
+    `inputs`
+
+    : The inputs of the flake
+
+    `super`
+
+    : The previous library (e.g. `inputs.nixpkgs.lib`)
+
+    # Type
+
+    ```
+    loadLib :: Path -> AttrSet Flake -> AttrSet ? -> AttrSet ?
+    ```
+   */
   loadLib =
     path: inputs: super:
     recursiveInsertList (
@@ -73,7 +143,29 @@ rec {
       ) (find ".nix" path)
     );
 
-  # Like loadLib, but returns super extended with the loaded library functions
+  /**
+    Like `loadLib`, but returns `super` extended with the loaded library functions
+
+    # Inputs
+
+    `path`
+
+    : The path to the library directory
+
+    `inputs`
+
+    : The inputs of the flake
+
+    `super`
+
+    : The previous library (e.g. `inputs.nixpkgs.lib`)
+
+    # Type
+
+    ```
+    loadExtendedLib :: Path -> AttrSet Flake -> AttrSet a -> AttrSet a
+    ```
+   */
   loadExtendedLib =
     path: inputs: super:
     recursiveUpdate super (loadLib path inputs super);
