@@ -11,6 +11,7 @@ attrs@{
 let
   inherit (lib)
     attrValues
+    callPackageWith
     findPackages
     getStoryDefinitions
     length
@@ -64,7 +65,7 @@ in
   config =
   let
     overlayFiles = findPackages "${root}/overlays";
-    overlays = mapAttrs (n: v: v attrs) overlayFiles;
+    overlays = mapAttrs (n: v: callPackageWith attrs v) overlayFiles;
     combinedOverlay = mkCombinedOverlay (attrValues overlays);
   in
   {
