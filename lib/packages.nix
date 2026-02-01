@@ -3,11 +3,13 @@ let
   inherit (builtins)
     readDir
     ;
-  # inherit (lib)
-  #   mapAttrs
-  #   ;
+  inherit (lib)
+    hasSuffix
+    mapAttrs'
+    pathExists
+    removeSuffix
+    ;
 in
-with lib;
 {
 
   /**
