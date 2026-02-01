@@ -18,6 +18,7 @@ let
     optionalAttrs
     recursiveInsertList
     recursiveUpdate
+    setDefaultModuleLocation
     ;
 in
 rec {
@@ -90,7 +91,7 @@ rec {
         }:
         {
           imports = [
-            module
+            (setDefaultModuleLocation (toString root + "/flake.nix") module)
             combinedModules
             inputs'.flake-parts.flakeModules.flakeModules
           ] ++ (getStoryDefinitions stories [ "flakeModule" ]);

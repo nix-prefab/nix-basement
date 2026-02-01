@@ -4,6 +4,7 @@ let
     attrValues
     find
     getAttrFromPath
+    importModule
     isAttrs
     mapListToAttrs
     mkEnableOption
@@ -13,9 +14,13 @@ let
     removePrefix
     removeSuffix
     setAttrByPath
+    setDefaultModuleLocation
     ;
 in
 {
+
+  importModule = file:
+    setDefaultModuleLocation file (import file);
 
   /**
     Recursively find all nix files in a directory and import them.
@@ -39,7 +44,7 @@ in
       { }
     else
       mapListToAttrs (
-        file: nameValuePair' (removeSuffix ".nix" (removePrefix "${modulesPath}/" file)) (import file)
+        file: nameValuePair' (removeSuffix ".nix" (removePrefix "${modulesPath}/" file)) (importModule file)
       ) (find ".nix" modulesPath);
 
   /**
