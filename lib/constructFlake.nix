@@ -6,18 +6,24 @@ let
 
   inherit (builtins)
     readDir
+    warn
     ;
   inherit (lib)
     attrByPath
+    attrNames
+    attrValues
+    elem
     filter
     filterAttrs
     findModules
+    foldr
+    isAttrs
     loadLib
-    mapAttrsToList
+    mapListToAttrs
     mkCombinedModule
-    optionalAttrs
+    nameValuePair
+    recursiveInsert
     recursiveInsertList
-    recursiveUpdate
     setDefaultModuleLocation
     ;
 in
@@ -65,7 +71,7 @@ rec {
 
       # Combine the base lib with all story libs
       superLib = recursiveInsertList (
-        [ inputs'.nixpkgs.lib ] ++ (map (story: story.lib) (filter (story: story ? lib) stories))
+        [ inputs'.nixpkgs.lib ] ++ (getStoryDefinitions stories [ "lib" ])
       );
 
       # Library functions of the current story
@@ -79,7 +85,7 @@ rec {
         inherit inputs;
         specialArgs = {
           inherit root stories inputs';
-          lib = recursiveUpdate superLib lib';
+          lib = recursiveInsert superLib lib';
         } // specialArgs;
       }
       (
@@ -108,7 +114,8 @@ rec {
       );
 
   /**
-    Get all stories from the flake inputs.
+    Get all stories from the flake inputs (recursively).
+    Returns an attribute set with the story IDs as the keys and the story flakes' `story` attributes as the values.
 
     # Inputs
 
@@ -119,16 +126,47 @@ rec {
     # Type
 
     ```
-    getStories :: AttrSet Flake -> [Story]
+    getStories :: AttrSet Flake -> AttrSet Story
     ```
    */
   getStories =
     inputs:
     let
-      otherInputs = filterAttrs (n: v: n != "self") inputs;
-      storyInputs = filterAttrs (n: v: v ? story) otherInputs;
+      otherInputs = inputs': filterAttrs (n: v: n != "self") inputs';
+      storyInputs = inputs':
+        attrValues (
+          filterAttrs
+            (n: v:
+              if v ? story && v.story ? "_type" && v.story._type == "story"
+                then
+                  if v.story ? id
+                    then true
+                    else warn "Input ${n} is a story but does not have an ID, skipping" false
+                else false
+            )
+            (otherInputs inputs')
+        );
+      stories = inputs':
+        mapListToAttrs
+          (it: nameValuePair it.story.id (it.story // { inherit (it) outPath; }))
+          (storyInputs inputs');
+      getStoriesRecursive = parentStories: inputs':
+        let
+          parentStoryIds = attrNames parentStories;
+          newStories = filterAttrs
+            (n: v:
+              if elem n parentStoryIds
+              then
+                if (v.outPath == parentStories.${n}.outPath)
+                  then false
+                  else throw "Story ${n} is included multiple times with mismatched store paths"
+              else true
+            )
+            (stories inputs');
+        in
+        foldr (v: acc: acc // (getStoriesRecursive acc (v.inputs or {}))) newStories (storyInputs inputs');
     in
-    mapAttrsToList (n: v: v.story // (optionalAttrs (!v.story ? name) { name = n; })) storyInputs;
+    getStoriesRecursive { } inputs;
 
   /**
     Retrieves definitions at a given attribute path from a list of stories.
@@ -146,11 +184,19 @@ rec {
     # Type
 
     ```
-    getStoryDefinitions :: [AttrSet Story] -> [String] -> [?]
+    getStoryDefinitions :: AttrSet Story | [Story] -> [String] -> [?]
     ```
    */
   getStoryDefinitions =
     stories:
     path:
-    filter (val: val != null) (map (story: attrByPath path null story) stories);
+    filter
+      (val: val != null)
+      (map
+        (story: attrByPath path null story)
+        (if isAttrs stories
+          then attrValues stories
+          else stories
+        )
+      );
 }

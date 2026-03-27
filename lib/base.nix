@@ -4,16 +4,26 @@ let
     readDir
     ;
   inherit (super)
+    attrNames
     concatStringsSep
     elemAt
     flatten
     foldl
+    functionArgs
     hasSuffix
     head
     isAttrs
+    isBool
+    isFloat
+    isFunction
+    isInt
+    isList
+    isPath
+    isString
     length
     mapAttrsToList
     recursiveUpdate
+    typeOf
     zipAttrsWith
     ;
 in
@@ -53,6 +63,50 @@ rec {
     );
 
   /**
+    Return a string representation of the supplied value. Unlike `builtins.toString`, this function is lazy and can also create representations of functions.
+
+    # Inputs
+
+    `value`
+
+    : The value to represent as a string
+
+    # Type
+
+    ```
+    repr :: ? -> String
+    ```
+   */
+  repr = value:
+    if isBool value then
+      if value then "true" else "false"
+    else if (isInt value || isFloat value) then
+      toString value
+    else if isString value then
+      "\"${value}\""
+    else if isPath value then
+      "${toString value}"
+    else if isList value then
+      "[${concatStringsSep ", " (map repr value)}]"
+    else if isAttrs value then
+      if value ? "__toString" then
+        value.__toString
+      else if value ? "outPath" then
+        "«derivation ${value.outPath}»"
+      else
+        "{ ${concatStringsSep " " (mapAttrsToList (n: v: "${n} = ${repr v}; ") value)}}"
+    else if isFunction value then
+      let
+        args = functionArgs value;
+      in
+      if length (attrNames args) > 0 then
+        "«function {${concatStringsSep ", " (mapAttrsToList (n: v: if v then n else "${n}?"))}}»"
+      else
+        "«function ?»"
+    else
+      throw "Unsupported type: ${toString (typeOf value)}";
+
+  /**
     Merge two attrsets recursively like `lib.recursiveUpdate`, but do not allow overwriting
 
     # Inputs
@@ -86,7 +140,7 @@ rec {
           else if isAttrs (head values) && isAttrs (elemAt values 1) then
             recurse here values
           else
-            throw "Conflict at ${concatStringsSep "." here} between ${toString (head values)} and ${toString (elemAt values 1)}"
+            throw "Conflict at ${concatStringsSep "." here} between ${repr (head values)} and ${repr (elemAt values 1)}"
         );
     in
     recurse [ ] [ rhs lhs ];

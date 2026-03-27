@@ -29,7 +29,10 @@
           systems = lib.systems.flakeExposed; # All nixpkgs systems
 
           prefab = {
-            nixpkgs.applyDefaultOverlay = true;
+            nixpkgs = {
+              applyDefault = true;
+              exportDefault = true;
+            };
           };
 
           flake = {

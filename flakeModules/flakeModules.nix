@@ -1,15 +1,26 @@
-{ lib, ... }:
+{ config, lib, ... }:
 let
   inherit (lib)
+    mkIf
     mkOption
     ;
+
   inherit (lib.types)
-    nullOr
+    bool
     deferredModule
+    nullOr
     ;
 in
 {
   options = {
+    prefab.flakeModules = {
+      exportDefault = mkOption {
+        type = bool;
+        description = "Export the default flake module as a story output";
+        default = true;
+      };
+    };
+
     flake = {
       story = {
         flakeModule = mkOption {
@@ -21,5 +32,9 @@ in
     };
   };
 
-  # config.flakeModules is set in the constructFlake function
+  config = {
+    flake.story.flakeModule = mkIf config.prefab.flakeModules.exportDefault config.flake.flakeModules.default;
+    # config.flakeModules is set in the constructFlake function
+  };
+
 }

@@ -8,6 +8,7 @@ let
   inherit (lib)
     concatStringsSep
     flatten
+    getStoryDefinitions
     mapAttrs
     mapAttrs'
     mkOption
@@ -90,10 +91,10 @@ in
       }:
       {
         devShells.default = pkgs.mkShell {
-          buildInputs = config.shell.packages ++ (flatten (map (story: story.shell.packages or [ ]) stories));
+          buildInputs = config.shell.packages ++ (flatten (getStoryDefinitions stories [ "shell" "packages" ]));
 
           shellHook = ''
-            ${(concatStringsSep "\n" (map (story: story.shell.hook or "") stories))}
+            ${(concatStringsSep "\n" (getStoryDefinitions stories [ "shell" "hook" ]))}
 
             ${config.shell.hook}
           '';

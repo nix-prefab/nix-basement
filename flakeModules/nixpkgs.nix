@@ -18,6 +18,7 @@ let
     mapAttrs
     mkCombinedOverlay
     mkEnableOption
+    mkIf
     mkOption
     optional
     types
@@ -36,7 +37,8 @@ in
         lib = nixpkgs.lib;
       }).options;
 
-      applyDefaultOverlay = mkEnableOption "Automatically apply overlays.\${system}.default when loading nixpkgs";
+      applyDefault = mkEnableOption "Automatically apply overlays.default when loading nixpkgs";
+      exportDefault = mkEnableOption "Export the default overlay as a story output";
 
       overlays = mkOption {
         description = "Additional overlays to apply when loading nixpkgs";
@@ -71,8 +73,10 @@ in
   {
     flake = {
       prefab.nixpkgs.appliedOverlays = config.prefab.nixpkgs.overlays
-        ++ (optional config.prefab.nixpkgs.applyDefaultOverlay (f: p: (inputs.self.overlays.default or {}) f p))
+        ++ (optional config.prefab.nixpkgs.applyDefault (f: p: (inputs.self.overlays.default or {}) f p))
         ++ (getStoryDefinitions stories [ "overlay" ]);
+
+      story.overlay = mkIf config.prefab.nixpkgs.exportDefault combinedOverlay;
 
       overlays =
         let

@@ -1,4 +1,4 @@
-{ config, options, lib, ... }:
+{ lib, ... }:
 let
   inherit (lib)
     mkOption
@@ -10,14 +10,18 @@ let
 in
 {
   options = {
-    flake.story.id = mkOption {
-      type = nullOr str;
-      default = null;
-      description = ''
-        The unique identifier/name of the nix-prefab story.
+    flake.story = {
+      id = mkOption {
+        type = nullOr str;
+        default = null;
+        description = ''
+          The unique identifier/name of the nix-prefab story.
 
-        If this is set to null (the default), the story attributes are ignored.
-      '';
+          If this is set to null (the default), the story attributes are ignored.
+        '';
+      };
     };
   };
+
+  config.flake.story._type = "story";
 }
