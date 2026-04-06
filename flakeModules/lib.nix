@@ -5,16 +5,10 @@ let
     ;
   inherit (lib.types)
     attrsOf
-    anything
-    functionTo
-    either
+    raw
     ;
 
-  libType =
-    let
-      recType = either (functionTo anything) recType;
-    in
-    attrsOf recType;
+  libType = attrsOf raw;
 in
 {
   options = {
