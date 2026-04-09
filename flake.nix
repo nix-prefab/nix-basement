@@ -41,6 +41,11 @@
               flakeModule = self.flakeModules.default;
               lib = self.lib;
             };
+
+            templates.default = {
+              path = ./template;
+              description = "An empty flake using nix-prefab";
+            };
           };
 
           perSystem =
