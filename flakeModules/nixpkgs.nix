@@ -17,6 +17,7 @@ let
     length
     mapAttrs
     mkCombinedOverlay
+    mkDefault
     mkEnableOption
     mkIf
     mkOption
@@ -71,6 +72,9 @@ in
     combinedOverlay = mkCombinedOverlay (attrValues overlays);
   in
   {
+    # The default is null, but something seems to be missing the needed null check here
+    prefab.nixpkgs.config.gitConfigFile = mkDefault (builtins.toFile "gitconfig" (lib.generators.toGitINI config.prefab.nixpkgs.config.gitConfig));
+
     flake = {
       prefab.nixpkgs.appliedOverlays = config.prefab.nixpkgs.overlays
         ++ (optional config.prefab.nixpkgs.applyDefault (f: p: (inputs.self.overlays.default or {}) f p))
