@@ -3,7 +3,7 @@ with builtins; with lib; {
 
   generateBuildJobs = flake: pkgs:
     let
-      system = pkgs.system;
+      system = pkgs.stdenv.hostPlatform.system;
     in
     rec {
       combined = pkgs.runCommand "build-jobs-${system}" { } ''
