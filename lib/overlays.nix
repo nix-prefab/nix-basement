@@ -1,26 +1,26 @@
-{ lib, inputs, ... }:
-with builtins; with lib; {
+{ lib, ... }:
+let
+  inherit (lib)
+    recursiveInsertList
+    ;
+in
+{
+  /**
+    Takes a list of overlays and combines them into a single overlay.
 
-  findOverlays = flake: includeAll: defaultOverlay:
-    let
-      overlays = findOverlays' flake;
-      selectedOverlays = if includeAll then (attrValues overlays) else [ ];
-    in
-    overlays // {
-      default = final: prev:
-        foldl' (flip extends) (_: prev) (selectedOverlays ++ [ defaultOverlay ]) final;
-    };
+    # Inputs
 
-  findOverlays' = flake:
-    let
-      path = "${flake}/overlays";
-    in
-    mapListToAttrs
-      (file:
-        nameValuePair'
-          (removeSuffix ".nix" (removePrefix "${path}/" file))
-          (final: prev: import file { inherit final prev lib inputs; })
-      )
-      (find ".nix" path);
+    `overlays`
 
+    : List of overlays to combine
+
+    # Type
+
+    ```
+    mkCombinedOverlay :: [Overlay] -> Overlay
+    ```
+   */
+  mkCombinedOverlay =
+    overlays: final: prev:
+    recursiveInsertList (map (overlay: overlay final prev) overlays);
 }
