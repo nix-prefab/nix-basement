@@ -33,10 +33,10 @@ in
 {
   options = {
     prefab.nixpkgs = {
-      config = (import "${nixpkgs}/pkgs/top-level/config.nix" {
-        config = null;
-        lib = nixpkgs.lib;
-      }).options;
+      config = mkOption {
+        description = "Configuration to pass when calling nixpkgs";
+        type = types.submodule (import "${nixpkgs}/pkgs/top-level/config.nix");
+      };
 
       applyDefault = mkEnableOption "Automatically apply overlays.default when loading nixpkgs";
       exportDefault = mkEnableOption "Export the default overlay as a story output";
@@ -50,7 +50,6 @@ in
       appliedOverlays = mkOption {
         description = "Overlays that are applied when loading nixpkgs";
         type = types.listOf overlay_t;
-        default = [ ];
         readOnly = true;
       };
     };
