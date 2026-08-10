@@ -24,6 +24,7 @@ let
     nameValuePair
     recursiveInsert
     recursiveInsertList
+    recursiveUpdateList
     setDefaultModuleLocation
     ;
 in
@@ -70,8 +71,9 @@ rec {
       stories = getStories inputs;
 
       # Combine the base lib with all story libs
+      baseLib = inputs'.nixpkgs.lib.extend (_: _: inputs'.flake-parts.lib);
       superLib = recursiveInsertList (
-        [ inputs'.nixpkgs.lib ] ++ (getStoryDefinitions stories [ "lib" ])
+        [ baseLib ] ++ (getStoryDefinitions stories [ "lib" ])
       );
 
       # Library functions of the current story
@@ -80,7 +82,7 @@ rec {
       flakeModules' = findModules "${root}/flakeModules";
       combinedModules = mkCombinedModule flakeModules';
     in
-    lib.mkFlake
+    superLib.mkFlake
       {
         inherit inputs;
         specialArgs = {
