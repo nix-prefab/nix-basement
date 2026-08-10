@@ -2,22 +2,27 @@
 let
   inherit (lib)
     attrValues
+    evalModules
     find
     getAttrFromPath
     importModule
     isAttrs
+    isPath
+    isString
     mapListToAttrs
     mkEnableOption
     mkIf
     nameValuePair'
     recursiveUpdate
+    recursiveInsert
+    removeAttrs
     removePrefix
     removeSuffix
     setAttrByPath
     setDefaultModuleLocation
     ;
 in
-{
+rec {
 
   importModule = file:
     setDefaultModuleLocation file (import file);
@@ -68,7 +73,7 @@ in
   };
 
   /**
-    Takes a path to an option, a description of a module and that module and wraps the module, so that it may be enabled by setting the newly created option to true.
+    Takes a path to an option, a description for that option and a list of modules and wraps the modules, so that they may be applied by setting the newly created option to true.
 
     # Inputs
 
@@ -80,32 +85,69 @@ in
 
     : Description for the new option
 
-    `module`
+    `modules`
 
-    : The module to wrap
+    : The list of modules to wrap. May be specified as either an already imported module or a path to a nix file containing a module. Specifying paths is preferred as it allows for better error messages.
 
     # Type
 
     ```
-    mkEnableableModule :: [String] -> String -> Module -> Module
+    mkEnableableModule :: [String] -> String -> [Module] -> Module
     ```
    */
   mkEnableableModule =
-    optionPath: description: module:
-    (
-      args@{ config, ... }:
-      let
-        evaluated = module args;
-      in
-      {
-        options = recursiveUpdate (if evaluated ? options then evaluated.options else { }) (
-          setAttrByPath optionPath (mkEnableOption description)
-        );
+    optionPath: description: modules:
+    { ... }: {
+      imports = [(mkEnableableModule' optionPath modules)];
 
-        config = mkIf (getAttrFromPath optionPath config) (
-          if evaluated ? config then evaluated.config else evaluated
-        );
-      }
-    );
+      options = setAttrByPath optionPath (mkEnableOption description);
+    };
+
+  /**
+    Takes a path to an option and a list of modules and wrapes the modules, so that they may be applied by setting the option at the specified path to true.
+    This is the same as `mkEnableableModule`, but using a preexisting option instead of creating a new one.
+
+    # Inputs
+
+    `optionPath`
+
+    : Path to the option
+
+    `modules`
+
+    : The list of modules to wrap. May be specified as either an already imported module or a path to a nix file containing a module. Specifying paths is preferred as it allows for better error messages.
+
+    # Type
+
+    ```
+    mkEnableableOption' :: [String] -> [Module] -> Module
+    ```
+  */
+  mkEnableableModule' =
+    optionPath: modules:
+    let
+      wrappedModules = map
+        (module:
+          let
+            isFromFile = isString module || isPath module;
+            moduleFn = if isFromFile
+              then import module
+              else module;
+            wrappedModule = args@{ config, lib, pkgs, modules, modulesPath, options, utils, ...}:
+              let
+                evaluated = moduleFn args;
+              in
+              {
+                options = if evaluated ? options then evaluated.options else { };
+                config = if (evaluated ? config || evaluated ? options || evaluated ? imports) then evaluated.config or {} else evaluated;
+              };
+          in
+          if isFromFile
+            then setDefaultModuleLocation module wrappedModule
+            else wrappedModule
+        )
+        modules;
+    in
+    mkCombinedModule wrappedModules;
 
 }
