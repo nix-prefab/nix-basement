@@ -1,119 +1,63 @@
 {
-  description = "TODO: add description";
+  description = "Base library for nix-prefab (nix-basement)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
-    nmd = {
-      url = "github:nix-basement/nmd";
-      flake = false;
-    };
-    darwin = {
-      url = "github:lnl7/nix-darwin/master";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    flake-utils.url = "github:numtide/flake-utils";
-    agenix = {
-      url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    deploy-rs = {
-      url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.utils.follows = "flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
+  outputs =
+    inputs@{ self, ... }:
     let
-      lib = import ./lib { inherit inputs; };
+      bootstrapLib = import ./lib {
+        inherit inputs;
+        super = inputs.nixpkgs.lib;
+        bootstrap = true;
+      };
     in
-    with builtins; with lib; {
-      # system independent outputs
-      inherit lib;
-
-      nixosModules = findNixosModules self;
-      darwinModules = findDarwinModules self;
-
-      overlays = findOverlays self true
-        (final: prev: {
-          inherit lib; # overwrite pkgs.lib with our extended lib
-          agenix = inputs.agenix.packages.${prev.system}.agenix;
-          base = self.packages.${prev.system}; # Add our packages to the base scope
-        });
-
-    } // (flake-utils.lib.eachDefaultSystem (system:
-      let
-        # import nixpkgs for the current system and set options
-        pkgs = loadPkgs inputs {
-          inherit system;
-          allowUnfree = true;
-          overlays = inputOverlays inputs;
-        };
-      in
+    bootstrapLib.constructFlake
       {
-        # system-specific outputs
+        inherit inputs;
+        root = ./.;
+      }
+      (
+        { lib, getSystem, ... }:
+        {
+          systems = lib.systems.flakeExposed; # All nixpkgs systems
 
-        packages = listToAttrs
-          (
-            map
-              (file: rec {
-                name = unsafeDiscardStringContext (replaceStrings [ "/" ] [ "-" ] (removePrefix "${self}/scripts/" file)); # this is safe, actually
-                value = pkgs.substituteAll {
-                  inherit name;
-                  src = file;
-                  dir = "bin";
-                  isExecutable = true;
-
-                  # packages that are available to the scripts
-                  inherit (pkgs)
-                    bash
-                    gnused
-                    jq
-                    nix
-                    python3
-                    rage
-                    ;
-
-                  wireguard = pkgs.wireguard-tools;
-                  nixpkgs = toString inputs.nixpkgs;
-                  nixfmt = pkgs.nixfmt-rfc-style;
-                };
-              })
-              (find "" "${self}/scripts")
-          );
-
-        apps = mapAttrs
-          (name: value:
-            (flake-utils.lib.mkApp {
-              inherit name;
-              drv = value;
-            })
-          )
-          inputs.self.packages.${system};
-
-        devShells.default =
-          pkgs.mkShell {
-            buildInputs = with pkgs;
-              flatten [
-                agenix
-                nixpkgs.legacyPackages.${system}.deploy-rs
-                nixpkgs-fmt
-                rage
-
-                (attrValues self.packages.${system})
-              ];
+          prefab = {
+            nixpkgs = {
+              applyDefault = true;
+              exportDefault = true;
+            };
           };
 
-        checks = {
-          nixpkgs-fmt = pkgs.runCommand "check-nix-format" { } ''
-            ${pkgs.nixpkgs-fmt}/bin/nixpkgs-fmt --check ${./.}
-            mkdir $out #sucess
-          '';
-        };
+          flake = {
+            story = {
+              id = "prefab.basement";
+              flakeModule = self.flakeModules.default;
+              lib = self.lib;
+            };
 
-        buildJobs = generateBuildJobs self pkgs;
-        docs = (import ./docs { inherit pkgs lib inputs; });
+            templates.default = {
+              path = ./template;
+              description = "An empty flake using nix-prefab";
+            };
+          };
 
-      }
-    ));
+          perSystem =
+            { pkgs, system, ... }:
+            {
+              story = {
+                shell.packages = [ ];
+              };
+              shell.packages = (getSystem system).story.shell.packages;
+
+              formatter = pkgs.nixfmt-rfc-style;
+            };
+        }
+      );
 }

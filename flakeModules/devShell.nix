@@ -1,0 +1,116 @@
+{
+  config,
+  lib,
+  stories,
+  ...
+}:
+let
+  inherit (lib)
+    concatStringsSep
+    flatten
+    getStoryDefinitions
+    mapAttrs
+    mapAttrs'
+    mkOption
+    mkPerSystemOption
+    ;
+  inherit (lib.types)
+    lazyAttrsOf
+    lines
+    listOf
+    package
+    submodule
+    ;
+in
+{
+  options = {
+
+    perSystem = mkPerSystemOption {
+      _file = ./devShell.nix;
+
+      options = {
+        story = {
+          shell = {
+            packages = mkOption {
+              type = listOf package;
+              default = [ ];
+              description = "A set of packages that should be available in the devShell of all stories built on top of this one";
+            };
+            hook = mkOption {
+              type = lines;
+              default = "";
+              description = "Hook that should be run in the devShell of all stories built on top of this one";
+            };
+          };
+        };
+
+        shell = {
+          packages = mkOption {
+            type = listOf package;
+            default = [ ];
+            description = "A set of packages that should be available in the devShell";
+          };
+          hook = mkOption {
+            type = lines;
+            default = "";
+            description = "A hook that should be run in the devShell";
+          };
+        };
+      };
+    };
+
+    flake = {
+      story.shell = mkOption {
+        type = lazyAttrsOf (submodule {
+          options = {
+            packages = mkOption {
+              type = listOf package;
+              default = { };
+              description = "See perSystem.shell.packages";
+            };
+            hook = mkOption {
+              type = lines;
+              default = "";
+              description = "See perSystem.shell.hook";
+            };
+          };
+        });
+      };
+      default = { };
+    };
+
+  };
+
+  config = {
+    perSystem =
+      {
+        pkgs,
+        config,
+        self',
+        ...
+      }:
+      {
+        devShells.default = pkgs.mkShell {
+          buildInputs = config.shell.packages ++ (flatten (getStoryDefinitions stories [ "shell" "packages" ]));
+
+          shellHook = ''
+            ${(concatStringsSep "\n" (getStoryDefinitions stories [ "shell" "hook" ]))}
+
+            ${config.shell.hook}
+          '';
+        };
+
+        buildJobs = mapAttrs' (system: v: {
+          name = "shell-${system}";
+          value = v;
+        }) self'.devShells;
+      };
+
+    flake = {
+      story.shell = mapAttrs (system: v: {
+        packages = v.story.shell.packages;
+        hook = v.story.shell.hook;
+      }) config.allSystems;
+    };
+  };
+}
