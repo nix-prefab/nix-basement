@@ -1,10 +1,15 @@
 { lib, ... }:
 let
+  inherit (builtins)
+    baseNameOf
+    ;
   inherit (lib)
     attrValues
     evalModules
+    filter
     find
     getAttrFromPath
+    hasPrefix
     importModule
     isAttrs
     isPath
@@ -30,6 +35,7 @@ rec {
   /**
     Recursively find all nix files in a directory and import them.
     Returns them as an attrset with the file names as keys.
+    Files with names starting in an underscore (like _filename.nix) are ignored.
 
     # Inputs
 
@@ -50,7 +56,12 @@ rec {
     else
       mapListToAttrs (
         file: nameValuePair' (removeSuffix ".nix" (removePrefix "${modulesPath}/" file)) (importModule file)
-      ) (find ".nix" modulesPath);
+      ) (
+        (filter
+          (path: ! (hasPrefix "_" (baseNameOf path)))
+          (find ".nix" modulesPath)
+        )
+      );
 
   /**
     Combines a list or set of modules into a single module.
